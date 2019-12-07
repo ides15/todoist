@@ -1,5 +1,7 @@
 # todoist
 
+Golang client library for the V8 Todoist Sync API. This repository is in development.
+
 ## Creating a Client
 
 ```go
