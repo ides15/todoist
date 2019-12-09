@@ -1,4 +1,4 @@
-package main
+package types
 
 type Command struct {
 	Type   string      `json:"type"`
