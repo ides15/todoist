@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -16,15 +16,11 @@ const (
 	defaultUserAgent = "todoist-go/1.0.0"
 )
 
-var (
-	errRequiredToken = errors.New("must provide an API token")
-	errBuildRequest  = errors.New("unable to build request")
-)
-
 type Client struct {
 	Token string
 
 	client    *http.Client
+	debug     bool
 	baseURL   string
 	userAgent string
 
@@ -37,7 +33,7 @@ func NewClient(token string, client *http.Client) (*Client, error) {
 	}
 
 	if token == "" {
-		return nil, errRequiredToken
+		return nil, types.ErrRequiredToken
 	}
 
 	c := &Client{
@@ -45,6 +41,7 @@ func NewClient(token string, client *http.Client) (*Client, error) {
 		client:    client,
 		baseURL:   defaultBaseURL,
 		userAgent: defaultUserAgent,
+		debug:     false,
 	}
 
 	c.Projects = &ProjectService{c: c}
@@ -63,22 +60,21 @@ func (c *Client) NewRequest(syncToken string, commands *[]types.Command, resourc
 
 	if commands != nil {
 		commandsString, _ := json.Marshal(commands)
-
 		form.Add("commands", string(commandsString))
 	}
 
 	if resourceTypes != nil {
 		resourceTypesString, _ := json.Marshal(resourceTypes)
-
 		form.Add("resource_types", string(resourceTypesString))
 	}
 
 	req, err := http.NewRequest("POST", c.baseURL, strings.NewReader(form.Encode()))
 	if err != nil {
-		return nil, errBuildRequest
+		return nil, types.ErrBuildRequest
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", c.userAgent)
 
 	return req, nil
 }
@@ -99,5 +95,26 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		return nil, err
 	}
 
+	if res.StatusCode != http.StatusOK {
+		errorMessage, err := CreateError(res)
+		if err != nil {
+			return nil, types.ErrUnknown
+		}
+
+		return nil, errorMessage
+	}
+
 	return res, nil
+}
+
+func (c *Client) Log(v ...interface{}) {
+	if c.debug {
+		log.Println(v...)
+	}
+}
+
+func (c *Client) Logf(format string, v ...interface{}) {
+	if c.debug {
+		log.Printf(format, v...)
+	}
 }

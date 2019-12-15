@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"testing"
 	"time"
@@ -20,9 +22,21 @@ var (
 func setup() {
 	client, _ = NewClient("12345", nil)
 	testServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"test":"hi"}`))
-		return
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+
+		params, _ := url.ParseQuery(buf.String())
+
+		switch {
+		case params.Get("resource_types") == "[\"projects\"]":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"projects":[{"id":1,"name":"Inbox"},{"id":2,"name":"Classes"}]}`))
+			break
+		default:
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"test":"hi"}`))
+			break
+		}
 	}))
 }
 
@@ -37,8 +51,8 @@ func TestNewClientNilToken(t *testing.T) {
 	_, err := NewClient("", nil)
 	if err == nil {
 		t.Fatalf("expected err, received %v", err)
-	} else if err.Error() != errRequiredToken.Error() {
-		t.Fatalf("expected %v, received %v", errRequiredToken.Error(), err)
+	} else if err.Error() != types.ErrRequiredToken.Error() {
+		t.Fatalf("expected %v, received %v", types.ErrRequiredToken.Error(), err)
 	}
 }
 
@@ -86,8 +100,8 @@ func TestBadNewRequest(t *testing.T) {
 		t.Fatalf("expected err, received %v", err)
 	}
 
-	if err.Error() != errBuildRequest.Error() {
-		t.Fatalf("expected %v, received %v", err.Error(), errBuildRequest.Error())
+	if err.Error() != types.ErrBuildRequest.Error() {
+		t.Fatalf("expected %v, received %v", err.Error(), types.ErrBuildRequest.Error())
 	}
 }
 
@@ -135,6 +149,17 @@ func TestNewRequestContentType(t *testing.T) {
 	expected := "application/x-www-form-urlencoded"
 	if request.Header.Get("Content-Type") != expected {
 		t.Fatalf("expected Content-Type of %s, received %s", expected, request.Header.Get("Content-Type"))
+	}
+}
+
+func TestNewRequestUserAgent(t *testing.T) {
+	setup()
+
+	request, _ := client.NewRequest("*", nil, nil)
+
+	expected := defaultUserAgent
+	if request.Header.Get("User-Agent") != expected {
+		t.Fatalf("expected User-Agent of %s, received %s", expected, request.Header.Get("User-Agent"))
 	}
 }
 
