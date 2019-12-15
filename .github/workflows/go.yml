@@ -23,8 +23,7 @@ jobs:
       #         fi
 
       - name: Lint
-        run: go get -u github.com/mgechev/revive
-        run: revive -config revive.toml
+        run: go get -u github.com/mgechev/revive && revive -config revive.toml
 
       - name: Format
         run: go fmt
