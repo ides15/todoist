@@ -20,10 +20,13 @@ jobs:
           config: revive.toml
 
       - name: Format
-        run: go fmt
+        run: go fmt ./...
+
+      - name: Vet
+        run: go vet ./...
 
       - name: Test
-        run: go test ./... -cover -failfast
+        run: go test ./... -cover -failfast -race
 
       - name: Build
         run: go build -v .
