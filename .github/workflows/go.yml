@@ -22,11 +22,10 @@ jobs:
       #             dep ensure
       #         fi
 
-      - name: Install Revive
-        run: go get -u github.com/mgechev/revive
-
       - name: Lint with Revive
-        run: revive -config revive.toml
+        run: |
+          go get -u github.com/mgechev/revive | sh
+          revive -config revive.toml
 
       - name: Format
         run: go fmt
