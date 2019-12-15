@@ -1,52 +1,71 @@
 package main
 
-type Project struct {
-	ID             int    `json:"id"`
-	LegacyID       int    `json:"legacy_id"`
-	Name           string `json:"name"`
-	Color          int    `json:"color"`
-	ParentID       int    `json:"parent_id"`
-	LegacyParentID int    `json:"legacy_parent_id"`
-	ChildOrder     int    `json:"child_order"`
-	Collapsed      int    `json:"collapsed"`
-	Shared         bool   `json:"shared"`
-	IsDeleted      int    `json:"is_deleted"`
-	IsArchived     int    `json:"is_archived"`
-	IsFavorite     int    `json:"is_favorite"`
-	InboxProject   bool   `json:"inbox_project"`
-	TeamInbox      bool   `json:"team_inbox"`
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/ides15/todoist/types"
+)
+
+type ProjectService struct {
+	c *Client
 }
 
-type NewProject struct {
-	Name       string `json:"name"`
-	Color      int    `json:"color"`
-	ParentID   int    `json:"parent_id"`
-	ChildOrder int    `json:"child_order"`
-	IsFavorite int    `json:"is_favorite"`
+func (s *ProjectService) GetProjects() (*[]types.Project, error) {
+	s.c.Log("GetProjects called")
+	req, err := s.c.NewRequest("*", nil, &[]string{"projects"})
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.c.Do(context.Background(), req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	response := &types.Response{}
+	if err := json.NewDecoder(res.Body).Decode(response); err != nil {
+		return nil, err
+	}
+
+	return response.Projects, nil
 }
 
-type UpdatedProject struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	Color      int    `json:"color"`
-	Collapsed  int    `json:"collapsed"`
-	IsFavorite int    `json:"is_favorite"`
+func (s *ProjectService) GetProjectByID(id int) (*types.Project, error) {
+	s.c.Log("GetProjectByID called")
+	projects, err := s.GetProjects()
+	if err != nil {
+		return nil, err
+	}
+
+	s.c.Log("projects", projects)
+
+	for _, project := range *projects {
+		if project.ID == id {
+			return &project, nil
+		}
+
+		return nil, types.ErrNotFound
+	}
+
+	return nil, types.ErrNotFound
 }
 
-type MovedProject struct {
-	ID       int `json:"id"`
-	ParentID int `json:"parent_id"`
-}
+func (s *ProjectService) GetProjectByName(name string) (*types.Project, error) {
+	s.c.Log("GetProjectByName called")
+	projects, err := s.GetProjects()
+	if err != nil {
+		return nil, err
+	}
 
-type DeletedProject struct {
-	ID int `json:"id"`
-}
+	for _, project := range *projects {
+		if project.Name == name {
+			return &project, nil
+		}
 
-type ReorderedProject struct {
-	Projects *[]Reorder `json:"projects"`
-}
+		return nil, types.ErrNotFound
+	}
 
-type Reorder struct {
-	ID         int `json:"id"`
-	ChildOrder int `json:"child_order"`
+	return nil, types.ErrNotFound
 }
