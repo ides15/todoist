@@ -15,8 +15,8 @@ func TestGetProjects(t *testing.T) {
 	}
 
 	expectedLength := 2
-	if len(*projects) != expectedLength {
-		t.Fatalf("expected %d projects, received %d", expectedLength, len(*projects))
+	if len(projects) != expectedLength {
+		t.Fatalf("expected %d projects, received %d", expectedLength, len(projects))
 	}
 }
 

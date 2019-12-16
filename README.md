@@ -15,8 +15,9 @@ go get github.com/ides15/todoist
 All that is required to set up a client is your Todoist API token, which can be found at https://todoist.com/prefs/integrations
 
 ```go
-client := todoist.Client{
-    Token: "<YOUR_TODOIST_API_TOKEN>",
+client, err := todoist.NewClient("<YOUR_TODOIST_API_TOKEN>", nil)
+if err != nil {
+    panic(err)
 }
 ```
 

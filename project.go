@@ -11,7 +11,7 @@ type ProjectService struct {
 	c *Client
 }
 
-func (s *ProjectService) GetProjects() (*[]types.Project, error) {
+func (s *ProjectService) GetProjects() ([]*types.Project, error) {
 	s.c.Log("GetProjects called")
 	req, err := s.c.NewRequest("*", nil, &[]string{"projects"})
 	if err != nil {
@@ -41,9 +41,9 @@ func (s *ProjectService) GetProjectByID(id int) (*types.Project, error) {
 
 	s.c.Log("projects", projects)
 
-	for _, project := range *projects {
+	for _, project := range projects {
 		if project.ID == id {
-			return &project, nil
+			return project, nil
 		}
 
 		return nil, types.ErrNotFound
@@ -59,9 +59,9 @@ func (s *ProjectService) GetProjectByName(name string) (*types.Project, error) {
 		return nil, err
 	}
 
-	for _, project := range *projects {
+	for _, project := range projects {
 		if project.Name == name {
-			return &project, nil
+			return project, nil
 		}
 
 		return nil, types.ErrNotFound
