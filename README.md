@@ -1,111 +1,44 @@
-# todoist
+# todoist-go
+
+[![Actions Status](https://github.com/ides15/todoist/workflows/Go/badge.svg)](https://github.com/ides15/todoist/actions)
 
 Golang client library for the V8 Todoist Sync API. This repository is in development.
 
+## Installation
+
+```sh
+go get github.com/ides15/todoist
+```
+
 ## Creating a Client
+
+All that is required to set up a client is your Todoist API token, which can be found at https://todoist.com/prefs/integrations
 
 ```go
 client := todoist.Client{
-    Token: "12345",
-    BaseURL: "https://api.todoist.com/sync/v8/sync",
+    Token: "<YOUR_TODOIST_API_TOKEN>",
 }
 ```
 
-## Getting All \<Resource>
+## Working with Resources
+
+Through `todoist.Client`, you can work with any Todoist resource (projects, notes, items, etc.)
+
+### Getting all projects
 
 ```go
-// Get all projects
-projects, err := client.Projects()
+projects, _ := client.Projects.GetProjects()
 
-// Get all items
-items, err := client.Items()
+for _, project := range projects {
+    fmt.Println(projects)
+}
 ```
 
-## Projects
-
-### Getting a Project
+### Getting a specific project
 
 ```go
-// Get project with the ID of 12345
-project, err := client.Project(12345)
-```
+project, _ := client.Projects.GetProjectByName("Inbox")
 
-### Create a Project
-
-```go
-project, err := client.AddProject(todoist.Project{
-    Name: "Project Name",
-    Color: 30,
-    ParentID: 0,
-    ChildOrder: nil,
-    IsFavorite: 1,
-})
-```
-
-### Updating a Project
-
-```go
-projects, err := client.Projects()
-project := projects[0]
-
-project.Name = "Updated Project Name")
-project.Color = 40
-
-project, err := client.UpdateProject(project)
-```
-
-### Moving a Project
-
-```go
-projects, err := client.Projects()
-project := projects[0]
-
-// Move project under the parent project with the ID of "1234"
-err := client.MoveProject(project.ID, 1234)
-```
-
-### Deleting a Project
-
-```go
-projects, err := client.Projects()
-project := projects[0]
-
-err := client.DeleteProject(project.ID)
-```
-
-### Archive a Project
-
-```go
-projects, err := client.Projects()
-project := projects[0]
-
-err := client.ArchiveProject(project.ID)
-```
-
-### Unarchive a Project
-
-```go
-projects, err := client.Projects()
-project := projects[0]
-
-err := client.UnarchiveProject(project.ID)
-```
-
-### Reorder a Project
-
-```go
-projects, err := client.Projects()
-project1 := projects[0]
-project2 := projects[1]
-
-err := client.ReorderProjects([]todoist.ProjectReorder{
-    {
-        ID: project1.ID,
-        ChildOrder: 2,
-    },
-    {
-        ID: project2.ID,
-        ChildOrder: 1,
-    },
-})
+// Or, by ID:
+project, _ := client.Projects.GetProjectByID(123)
 ```
