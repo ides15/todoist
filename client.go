@@ -12,17 +12,17 @@ import (
 )
 
 const (
-	defaultBaseURL   = "https://api.todoist.com/sync/v8/sync"
-	defaultUserAgent = "todoist-go/1.0.0"
+	DefaultBaseURL   = "https://api.todoist.com/sync/v8/sync"
+	DefaultUserAgent = "todoist-go/1.0.0"
 )
 
 type Client struct {
 	Token string
 
 	client    *http.Client
-	debug     bool
-	baseURL   string
-	userAgent string
+	Debug     bool
+	BaseURL   string
+	UserAgent string
 
 	Projects *ProjectService
 }
@@ -39,9 +39,9 @@ func NewClient(token string, client *http.Client) (*Client, error) {
 	c := &Client{
 		Token:     token,
 		client:    client,
-		baseURL:   defaultBaseURL,
-		userAgent: defaultUserAgent,
-		debug:     false,
+		BaseURL:   DefaultBaseURL,
+		UserAgent: DefaultUserAgent,
+		Debug:     false,
 	}
 
 	c.Projects = &ProjectService{c: c}
@@ -68,13 +68,13 @@ func (c *Client) NewRequest(syncToken string, commands *[]types.Command, resourc
 		form.Add("resource_types", string(resourceTypesString))
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", c.BaseURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, types.ErrBuildRequest
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", c.userAgent)
+	req.Header.Set("User-Agent", c.UserAgent)
 
 	return req, nil
 }
@@ -98,7 +98,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 	if res.StatusCode != http.StatusOK {
 		errorMessage, err := CreateError(res)
 		if err != nil {
-			return nil, types.ErrUnknown
+			return nil, err
 		}
 
 		return nil, errorMessage
@@ -108,13 +108,13 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 }
 
 func (c *Client) Log(v ...interface{}) {
-	if c.debug {
+	if c.Debug {
 		log.Println(v...)
 	}
 }
 
 func (c *Client) Logf(format string, v ...interface{}) {
-	if c.debug {
+	if c.Debug {
 		log.Printf(format, v...)
 	}
 }

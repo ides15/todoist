@@ -1,4 +1,4 @@
-package todoist
+package todoist_test
 
 import (
 	"context"
@@ -7,18 +7,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ides15/todoist"
 	"github.com/ides15/todoist/types"
 )
 
 func TestNewClientOK(t *testing.T) {
-	_, err := NewClient("12345", nil)
+	_, err := todoist.NewClient("12345", nil)
 	if err != nil {
 		t.Fatalf("expected nil error, received %v", err)
 	}
 }
 
 func TestNewClientNilToken(t *testing.T) {
-	_, err := NewClient("", nil)
+	_, err := todoist.NewClient("", nil)
 	if err == nil {
 		t.Fatalf("expected err, received %v", err)
 	} else if err.Error() != types.ErrRequiredToken.Error() {
@@ -34,8 +35,8 @@ func TestNewRequestOKURL(t *testing.T) {
 		t.Fatalf("expected nil error, received %v", err)
 	}
 
-	if request.URL.String() != defaultBaseURL {
-		t.Fatalf("expected %s, received %s", defaultBaseURL, request.URL.String())
+	if request.URL.String() != todoist.DefaultBaseURL {
+		t.Fatalf("expected %s, received %s", todoist.DefaultBaseURL, request.URL.String())
 	}
 }
 
@@ -63,7 +64,7 @@ func TestBadNewRequest(t *testing.T) {
 	Setup()
 
 	// ASCII control character will break `TestClient.NewRequest`
-	TestClient.baseURL = "\t"
+	TestClient.BaseURL = "\t"
 
 	_, err := TestClient.NewRequest("*", nil, nil)
 	if err == nil {
@@ -127,7 +128,7 @@ func TestNewRequestUserAgent(t *testing.T) {
 
 	request, _ := TestClient.NewRequest("*", nil, nil)
 
-	expected := defaultUserAgent
+	expected := todoist.DefaultUserAgent
 	if request.Header.Get("User-Agent") != expected {
 		t.Fatalf("expected User-Agent of %s, received %s", expected, request.Header.Get("User-Agent"))
 	}
@@ -215,7 +216,7 @@ func TestNewRequestNilResourceTypes(t *testing.T) {
 func TestDoRequestOK(t *testing.T) {
 	Setup()
 
-	TestClient.baseURL = TestServer.URL
+	TestClient.BaseURL = TestServer.URL
 
 	request, _ := TestClient.NewRequest("*", nil, nil)
 	_, err := TestClient.Do(context.Background(), request)
@@ -227,7 +228,7 @@ func TestDoRequestOK(t *testing.T) {
 func TestDoRequestContextCancel(t *testing.T) {
 	Setup()
 
-	TestClient.baseURL = TestServer.URL
+	TestClient.BaseURL = TestServer.URL
 	d := time.Now().Add(1 * time.Second)
 	ctx, cancel := context.WithDeadline(context.Background(), d)
 	cancel()
@@ -242,7 +243,7 @@ func TestDoRequestContextCancel(t *testing.T) {
 func TestDoRequestError(t *testing.T) {
 	Setup()
 
-	TestClient.baseURL = TestServer.URL
+	TestClient.BaseURL = TestServer.URL
 
 	request, _ := TestClient.NewRequest("*", nil, nil)
 
@@ -257,7 +258,7 @@ func TestDoRequestError(t *testing.T) {
 func TestDoAUTH_CSRF_ERRORResponse(t *testing.T) {
 	Setup()
 
-	TestClient.baseURL = TestServer.URL + "/AUTH_CSRF_ERROR"
+	TestClient.BaseURL = TestServer.URL + "/AUTH_CSRF_ERROR"
 
 	request, _ := TestClient.NewRequest("*", nil, nil)
 	_, err := TestClient.Do(context.Background(), request)
@@ -275,7 +276,7 @@ func TestDoAUTH_CSRF_ERRORResponse(t *testing.T) {
 func TestDoAUTH_INVALID_TOKENResponse(t *testing.T) {
 	Setup()
 
-	TestClient.baseURL = TestServer.URL + "/AUTH_INVALID_TOKEN"
+	TestClient.BaseURL = TestServer.URL + "/AUTH_INVALID_TOKEN"
 
 	request, _ := TestClient.NewRequest("*", nil, nil)
 	_, err := TestClient.Do(context.Background(), request)
@@ -293,7 +294,7 @@ func TestDoAUTH_INVALID_TOKENResponse(t *testing.T) {
 func TestDoInvalidErrorResponse(t *testing.T) {
 	Setup()
 
-	TestClient.baseURL = TestServer.URL + "/invalid-error"
+	TestClient.BaseURL = TestServer.URL + "/invalid-error"
 
 	request, _ := TestClient.NewRequest("*", nil, nil)
 	_, err := TestClient.Do(context.Background(), request)

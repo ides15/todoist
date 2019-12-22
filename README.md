@@ -7,7 +7,7 @@ Golang client library for the V8 Todoist Sync API. This repository is in develop
 ## Installation
 
 ```sh
-go get github.com/ides15/todoist
+go get -u github.com/ides15/todoist
 ```
 
 ## Creating a Client
@@ -42,4 +42,23 @@ project, _ := client.Projects.GetProjectByName("Inbox")
 
 // Or, by ID:
 project, _ := client.Projects.GetProjectByID(123)
+```
+
+### Creating a project
+
+```go
+import "github.com/ides15/todoist/types"
+
+newProject := &types.NewProject{
+    Name:       "New Project",
+    Color:      1,
+    ParentID:   1,
+    ChildOrder: 1,
+    IsFavorite: 0,
+}
+
+err = client.Projects.CreateProject(newProject)
+if err != nil {
+    t.Fatal(err)
+}
 ```

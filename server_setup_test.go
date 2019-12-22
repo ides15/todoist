@@ -1,17 +1,19 @@
-package todoist
+package todoist_test
 
 import (
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/ides15/todoist"
 )
 
 var (
-	TestClient = &Client{}
+	TestClient = &todoist.Client{}
 	TestServer = &httptest.Server{}
 )
 
 func Setup() {
-	TestClient, _ = NewClient("12345", nil)
+	TestClient, _ = todoist.NewClient("12345", nil)
 
 	TestServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

@@ -1,10 +1,12 @@
-package todoist
+package todoist_test
 
 import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/ides15/todoist"
 )
 
 func TestCreateErrorOK(t *testing.T) {
@@ -20,7 +22,7 @@ func TestCreateErrorOK(t *testing.T) {
 		}`))),
 	}
 
-	httpErr, err := CreateError(res)
+	httpErr, err := todoist.CreateError(res)
 	if err != nil {
 		t.Fatalf("expected no error, received %v", err)
 	}
@@ -36,7 +38,7 @@ func TestCreateErrorDecodingError(t *testing.T) {
 		Body: http.NoBody,
 	}
 
-	_, err := CreateError(res)
+	_, err := todoist.CreateError(res)
 	if err == nil {
 		t.Fatalf("expected decoding error, received nil")
 	}

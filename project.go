@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/google/uuid"
 	"github.com/ides15/todoist/types"
 )
 
@@ -68,4 +69,31 @@ func (s *ProjectService) GetProjectByName(name string) (*types.Project, error) {
 	}
 
 	return nil, types.ErrNotFound
+}
+
+func (s *ProjectService) CreateProject(p *types.NewProject) error {
+	s.c.Log("CreateProject called")
+
+	commands := &[]types.Command{
+		{
+			Type:   "project_add",
+			TempID: uuid.New().String(),
+			UUID:   uuid.New().String(),
+			Args:   p,
+		},
+	}
+	commandsString, _ := json.Marshal(commands)
+	s.c.Logf("\tCommands: %v\n", string(commandsString))
+
+	req, err := s.c.NewRequest("*", commands, &[]string{"projects"})
+	if err != nil {
+		return err
+	}
+
+	_, err = s.c.Do(context.Background(), req)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
