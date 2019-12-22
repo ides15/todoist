@@ -1,44 +1,14 @@
 package todoist
 
 import (
-	"bytes"
 	"context"
 	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
 	"regexp"
 	"testing"
 	"time"
 
 	"github.com/ides15/todoist/types"
 )
-
-var (
-	client     = &Client{}
-	testServer = &httptest.Server{}
-)
-
-func setup() {
-	client, _ = NewClient("12345", nil)
-	testServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
-
-		params, _ := url.ParseQuery(buf.String())
-
-		switch {
-		case params.Get("resource_types") == "[\"projects\"]":
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"projects":[{"id":1,"name":"Inbox"},{"id":2,"name":"Classes"}]}`))
-			break
-		default:
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"test":"hi"}`))
-			break
-		}
-	}))
-}
 
 func TestNewClientOK(t *testing.T) {
 	_, err := NewClient("12345", nil)
@@ -57,9 +27,9 @@ func TestNewClientNilToken(t *testing.T) {
 }
 
 func TestNewRequestOKURL(t *testing.T) {
-	setup()
+	Setup()
 
-	request, err := client.NewRequest("*", nil, nil)
+	request, err := TestClient.NewRequest("*", nil, nil)
 	if err != nil {
 		t.Fatalf("expected nil error, received %v", err)
 	}
@@ -70,9 +40,9 @@ func TestNewRequestOKURL(t *testing.T) {
 }
 
 func TestNewRequestOKToken(t *testing.T) {
-	setup()
+	Setup()
 
-	request, _ := client.NewRequest("*", nil, nil)
+	request, _ := TestClient.NewRequest("*", nil, nil)
 	defer request.Body.Close()
 
 	bodyBytes, _ := ioutil.ReadAll(request.Body)
@@ -90,12 +60,12 @@ func TestNewRequestOKToken(t *testing.T) {
 }
 
 func TestBadNewRequest(t *testing.T) {
-	setup()
+	Setup()
 
-	// ASCII control character will break `client.NewRequest`
-	client.baseURL = "\t"
+	// ASCII control character will break `TestClient.NewRequest`
+	TestClient.baseURL = "\t"
 
-	_, err := client.NewRequest("*", nil, nil)
+	_, err := TestClient.NewRequest("*", nil, nil)
 	if err == nil {
 		t.Fatalf("expected err, received %v", err)
 	}
@@ -106,9 +76,9 @@ func TestBadNewRequest(t *testing.T) {
 }
 
 func TestNewRequestSyncToken(t *testing.T) {
-	setup()
+	Setup()
 
-	request, _ := client.NewRequest("*", nil, nil)
+	request, _ := TestClient.NewRequest("*", nil, nil)
 	defer request.Body.Close()
 
 	bodyBytes, _ := ioutil.ReadAll(request.Body)
@@ -125,9 +95,9 @@ func TestNewRequestSyncToken(t *testing.T) {
 }
 
 func TestNewRequestNilSyncToken(t *testing.T) {
-	setup()
+	Setup()
 
-	request, _ := client.NewRequest("", nil, nil)
+	request, _ := TestClient.NewRequest("", nil, nil)
 	defer request.Body.Close()
 
 	bodyBytes, _ := ioutil.ReadAll(request.Body)
@@ -142,9 +112,9 @@ func TestNewRequestNilSyncToken(t *testing.T) {
 }
 
 func TestNewRequestContentType(t *testing.T) {
-	setup()
+	Setup()
 
-	request, _ := client.NewRequest("*", nil, nil)
+	request, _ := TestClient.NewRequest("*", nil, nil)
 
 	expected := "application/x-www-form-urlencoded"
 	if request.Header.Get("Content-Type") != expected {
@@ -153,9 +123,9 @@ func TestNewRequestContentType(t *testing.T) {
 }
 
 func TestNewRequestUserAgent(t *testing.T) {
-	setup()
+	Setup()
 
-	request, _ := client.NewRequest("*", nil, nil)
+	request, _ := TestClient.NewRequest("*", nil, nil)
 
 	expected := defaultUserAgent
 	if request.Header.Get("User-Agent") != expected {
@@ -164,7 +134,7 @@ func TestNewRequestUserAgent(t *testing.T) {
 }
 
 func TestNewRequestCommands(t *testing.T) {
-	setup()
+	Setup()
 
 	commands := &[]types.Command{{
 		Type: "project_add",
@@ -175,7 +145,7 @@ func TestNewRequestCommands(t *testing.T) {
 		TempID: "tempID",
 	}}
 
-	request, _ := client.NewRequest("*", commands, nil)
+	request, _ := TestClient.NewRequest("*", commands, nil)
 	defer request.Body.Close()
 
 	bodyBytes, _ := ioutil.ReadAll(request.Body)
@@ -190,9 +160,9 @@ func TestNewRequestCommands(t *testing.T) {
 }
 
 func TestNewRequestNilCommands(t *testing.T) {
-	setup()
+	Setup()
 
-	request, _ := client.NewRequest("*", nil, nil)
+	request, _ := TestClient.NewRequest("*", nil, nil)
 	defer request.Body.Close()
 
 	bodyBytes, _ := ioutil.ReadAll(request.Body)
@@ -207,11 +177,11 @@ func TestNewRequestNilCommands(t *testing.T) {
 }
 
 func TestNewRequestResourceTypes(t *testing.T) {
-	setup()
+	Setup()
 
 	resourceTypes := &[]string{"resource_type"}
 
-	request, _ := client.NewRequest("*", nil, resourceTypes)
+	request, _ := TestClient.NewRequest("*", nil, resourceTypes)
 	defer request.Body.Close()
 
 	bodyBytes, _ := ioutil.ReadAll(request.Body)
@@ -226,9 +196,9 @@ func TestNewRequestResourceTypes(t *testing.T) {
 }
 
 func TestNewRequestNilResourceTypes(t *testing.T) {
-	setup()
+	Setup()
 
-	request, _ := client.NewRequest("*", nil, nil)
+	request, _ := TestClient.NewRequest("*", nil, nil)
 	defer request.Body.Close()
 
 	bodyBytes, _ := ioutil.ReadAll(request.Body)
@@ -243,43 +213,92 @@ func TestNewRequestNilResourceTypes(t *testing.T) {
 }
 
 func TestDoRequestOK(t *testing.T) {
-	setup()
+	Setup()
 
-	client.baseURL = testServer.URL
+	TestClient.baseURL = TestServer.URL
 
-	request, _ := client.NewRequest("*", nil, nil)
-	_, err := client.Do(context.Background(), request)
+	request, _ := TestClient.NewRequest("*", nil, nil)
+	_, err := TestClient.Do(context.Background(), request)
 	if err != nil {
 		t.Fatalf("expected no err, received %v", err)
 	}
 }
 
 func TestDoRequestContextCancel(t *testing.T) {
-	setup()
+	Setup()
 
-	client.baseURL = testServer.URL
+	TestClient.baseURL = TestServer.URL
 	d := time.Now().Add(1 * time.Second)
 	ctx, cancel := context.WithDeadline(context.Background(), d)
 	cancel()
 
-	request, _ := client.NewRequest("*", nil, nil)
-	_, err := client.Do(ctx, request)
+	request, _ := TestClient.NewRequest("*", nil, nil)
+	_, err := TestClient.Do(ctx, request)
 	if err == nil {
 		t.Fatalf("expected context cancelled error, received %v", err)
 	}
 }
 
 func TestDoRequestError(t *testing.T) {
-	setup()
+	Setup()
 
-	client.baseURL = testServer.URL
+	TestClient.baseURL = TestServer.URL
 
-	request, _ := client.NewRequest("*", nil, nil)
+	request, _ := TestClient.NewRequest("*", nil, nil)
 
-	// Force error from `client.Do`
+	// Force error from `TestClient.Do`
 	request.URL = nil
-	_, err := client.Do(context.Background(), request)
+	_, err := TestClient.Do(context.Background(), request)
 	if err == nil {
 		t.Fatalf("expected Request.URL error, received %v", err)
+	}
+}
+
+func TestDoAUTH_CSRF_ERRORResponse(t *testing.T) {
+	Setup()
+
+	TestClient.baseURL = TestServer.URL + "/AUTH_CSRF_ERROR"
+
+	request, _ := TestClient.NewRequest("*", nil, nil)
+	_, err := TestClient.Do(context.Background(), request)
+
+	if e, ok := err.(*types.HTTPError); ok {
+		expected := "AUTH_CSRF_ERROR"
+		if e.ErrorTag != expected {
+			t.Fatalf("expected %s, received %s", expected, e.ErrorTag)
+		}
+	} else {
+		t.Fatalf("expected *types.HTTPError, received %v (%T)", err, err)
+	}
+}
+
+func TestDoAUTH_INVALID_TOKENResponse(t *testing.T) {
+	Setup()
+
+	TestClient.baseURL = TestServer.URL + "/AUTH_INVALID_TOKEN"
+
+	request, _ := TestClient.NewRequest("*", nil, nil)
+	_, err := TestClient.Do(context.Background(), request)
+
+	if e, ok := err.(*types.HTTPError); ok {
+		expected := "AUTH_INVALID_TOKEN"
+		if e.ErrorTag != expected {
+			t.Fatalf("expected %s, received %s", expected, e.ErrorTag)
+		}
+	} else {
+		t.Fatalf("expected *types.HTTPError, received %v (%T)", err, err)
+	}
+}
+
+func TestDoInvalidErrorResponse(t *testing.T) {
+	Setup()
+
+	TestClient.baseURL = TestServer.URL + "/invalid-error"
+
+	request, _ := TestClient.NewRequest("*", nil, nil)
+	_, err := TestClient.Do(context.Background(), request)
+
+	if e, ok := err.(*types.HTTPError); ok {
+		t.Fatalf("expected %v, received %v", types.ErrUnknown, e)
 	}
 }
