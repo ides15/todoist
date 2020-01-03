@@ -6,12 +6,12 @@ import (
 	"github.com/ides15/todoist/types"
 )
 
-func TestGetProjects(t *testing.T) {
+func TestGetProjects_OK(t *testing.T) {
 	// TODO: check that projects equals what we're expecting
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL
-	projects, err := TestClient.Projects.GetProjects()
+	projects, _, err := TestClient.Projects.GetProjects()
 	if err != nil {
 		t.Fatalf("expected no error, received %v", err)
 	}
@@ -22,19 +22,19 @@ func TestGetProjects(t *testing.T) {
 	}
 }
 
-func TestGetProjectsBadRequest(t *testing.T) {
+func TestGetProjects_BadRequest(t *testing.T) {
 	// TODO: check that projects equals what we're expecting
 	Setup()
 
 	TestClient.BaseURL = "\t"
-	_, err := TestClient.Projects.GetProjects()
+	_, _, err := TestClient.Projects.GetProjects()
 	if err == nil {
 		t.Fatalf("expected error, received nil")
 	}
 }
 
 // TODO: add ability to add context into individual resource requests
-// func TestGetProjectsDoRequestContextCancel(t *testing.T) {
+// func TestGetProjects_DoRequestContextCancel(t *testing.T) {
 // 	Setup()
 //
 // 	TestClient.BaseURL = TestServer.URL
@@ -48,62 +48,62 @@ func TestGetProjectsBadRequest(t *testing.T) {
 // 	}
 // }
 
-func TestGetProjectsBadJSON(t *testing.T) {
+func TestGetProjects_BadJSON(t *testing.T) {
 	// TODO: check that projects equals what we're expecting
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL + "/bad-json"
-	_, err := TestClient.Projects.GetProjects()
+	_, _, err := TestClient.Projects.GetProjects()
 	if err == nil {
 		t.Fatal("expected error, received nil")
 	}
 }
 
-func TestGetProjectByID(t *testing.T) {
+func TestGetProjectByID_OK(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL
-	_, err := TestClient.Projects.GetProjectByID(1)
+	_, _, err := TestClient.Projects.GetProjectByID(1)
 	if err != nil {
 		t.Fatalf("expected no error, received %v", err)
 	}
 }
 
-func TestGetProjectByIDErrGetProjects(t *testing.T) {
+func TestGetProjectByID_ErrGetProjects(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL + "/bad-json"
-	_, err := TestClient.Projects.GetProjectByID(1)
+	_, _, err := TestClient.Projects.GetProjectByID(1)
 	if err == nil {
 		t.Fatalf("expected error, received nil")
 	}
 }
 
-func TestGetProjectByName(t *testing.T) {
+func TestGetProjectByName_OK(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL
-	_, err := TestClient.Projects.GetProjectByName("Inbox")
+	_, _, err := TestClient.Projects.GetProjectByName("Inbox")
 	if err != nil {
 		t.Fatalf("expected no error, received %v", err)
 	}
 }
 
-func TestGetProjectByNameErrGetProjects(t *testing.T) {
+func TestGetProjectByName_ErrGetProjects(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL + "/bad-json"
-	_, err := TestClient.Projects.GetProjectByName("Inbox")
+	_, _, err := TestClient.Projects.GetProjectByName("Inbox")
 	if err == nil {
 		t.Fatalf("expected error, received nil")
 	}
 }
 
-func TestGetProjectByNameNoProjects(t *testing.T) {
+func TestGetProjectByName_NoProjects(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL + "/no-projects"
-	_, err := TestClient.Projects.GetProjectByName("Inbox")
+	_, _, err := TestClient.Projects.GetProjectByName("Inbox")
 	if err == nil {
 		t.Fatal("expected error, received nil")
 	} else if err != types.ErrNotFound {
@@ -111,11 +111,11 @@ func TestGetProjectByNameNoProjects(t *testing.T) {
 	}
 }
 
-func TestGetProjectByNameNotFound(t *testing.T) {
+func TestGetProjectByName_NotFound(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL + "/not-found"
-	_, err := TestClient.Projects.GetProjectByName("Inbox")
+	_, _, err := TestClient.Projects.GetProjectByName("Inbox")
 	if err == nil {
 		t.Fatal("expected error, received nil")
 	} else if err != types.ErrNotFound {
@@ -123,11 +123,11 @@ func TestGetProjectByNameNotFound(t *testing.T) {
 	}
 }
 
-func TestGetProjectByIDNoProjects(t *testing.T) {
+func TestGetProjectByID_NoProjects(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL + "/no-projects"
-	_, err := TestClient.Projects.GetProjectByID(1)
+	_, _, err := TestClient.Projects.GetProjectByID(1)
 	if err == nil {
 		t.Fatal("expected error, received nil")
 	} else if err != types.ErrNotFound {
@@ -135,11 +135,11 @@ func TestGetProjectByIDNoProjects(t *testing.T) {
 	}
 }
 
-func TestGetProjectByIDNotFound(t *testing.T) {
+func TestGetProjectByID_NotFound(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL + "/not-found"
-	_, err := TestClient.Projects.GetProjectByID(100)
+	_, _, err := TestClient.Projects.GetProjectByID(100)
 	if err == nil {
 		t.Fatal("expected error, received nil")
 	} else if err != types.ErrNotFound {
@@ -147,7 +147,7 @@ func TestGetProjectByIDNotFound(t *testing.T) {
 	}
 }
 
-func TestCreateProject(t *testing.T) {
+func TestCreate_Project(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = TestServer.URL
@@ -159,13 +159,13 @@ func TestCreateProject(t *testing.T) {
 		IsFavorite: 0,
 	}
 
-	err := TestClient.Projects.CreateProject(newProject)
+	_, err := TestClient.Projects.CreateProject(newProject)
 	if err != nil {
 		t.Fatalf("expected no error, received %v", err)
 	}
 }
 
-func TestCreateProjectBadRequest(t *testing.T) {
+func TestCreateProject_BadRequest(t *testing.T) {
 	Setup()
 
 	TestClient.BaseURL = "\t"
@@ -177,14 +177,14 @@ func TestCreateProjectBadRequest(t *testing.T) {
 		IsFavorite: 0,
 	}
 
-	err := TestClient.Projects.CreateProject(newProject)
+	_, err := TestClient.Projects.CreateProject(newProject)
 	if err == nil {
 		t.Fatal("expected error, received nil")
 	}
 }
 
 // TODO: add ability to add context into individual resource requests
-// func TestCreateProjectDoRequestContextCancel(t *testing.T) {
+// func TestCreateProject_DoRequestContextCancel(t *testing.T) {
 // 	Setup()
 //
 // 	TestClient.BaseURL = TestServer.URL

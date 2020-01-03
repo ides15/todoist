@@ -12,66 +12,64 @@ type ProjectService struct {
 	c *Client
 }
 
-func (s *ProjectService) GetProjects() ([]*types.Project, error) {
+func (s *ProjectService) GetProjects() ([]*types.Project, *types.Response, error) {
 	s.c.Log("GetProjects called")
+
 	req, err := s.c.NewRequest("*", nil, &[]string{"projects"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	res, err := s.c.Do(context.Background(), req)
+	response := new(types.Response)
+	_, err = s.c.Do(context.Background(), req, response)
 	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	response := &types.Response{}
-	if err := json.NewDecoder(res.Body).Decode(response); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return response.Projects, nil
+	return response.Projects, response, nil
 }
 
-func (s *ProjectService) GetProjectByID(id int) (*types.Project, error) {
+func (s *ProjectService) GetProjectByID(id int) (*types.Project, *types.Response, error) {
 	s.c.Log("GetProjectByID called")
-	projects, err := s.GetProjects()
+
+	projects, res, err := s.GetProjects()
 	if err != nil {
-		return nil, err
+		return nil, res, err
 	}
 
 	s.c.Log("projects", projects)
 
 	for _, project := range projects {
 		if project.ID == id {
-			return project, nil
+			return project, res, nil
 		}
 
-		return nil, types.ErrNotFound
+		return nil, res, types.ErrNotFound
 	}
 
-	return nil, types.ErrNotFound
+	return nil, res, types.ErrNotFound
 }
 
-func (s *ProjectService) GetProjectByName(name string) (*types.Project, error) {
+func (s *ProjectService) GetProjectByName(name string) (*types.Project, *types.Response, error) {
 	s.c.Log("GetProjectByName called")
-	projects, err := s.GetProjects()
+
+	projects, res, err := s.GetProjects()
 	if err != nil {
-		return nil, err
+		return nil, res, err
 	}
 
 	for _, project := range projects {
 		if project.Name == name {
-			return project, nil
+			return project, res, nil
 		}
 
-		return nil, types.ErrNotFound
+		return nil, res, types.ErrNotFound
 	}
 
-	return nil, types.ErrNotFound
+	return nil, res, types.ErrNotFound
 }
 
-func (s *ProjectService) CreateProject(p *types.NewProject) error {
+func (s *ProjectService) CreateProject(p *types.NewProject) (*types.Response, error) {
 	s.c.Log("CreateProject called")
 
 	commands := &[]types.Command{
@@ -87,13 +85,71 @@ func (s *ProjectService) CreateProject(p *types.NewProject) error {
 
 	req, err := s.c.NewRequest("*", commands, &[]string{"projects"})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = s.c.Do(context.Background(), req)
+	res, err := s.c.Do(context.Background(), req, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return res, nil
+}
+
+func (s *ProjectService) UpdateProject(p *types.UpdatedProject) (*types.Response, error) {
+	s.c.Log("UpdateProject called")
+
+	commands := &[]types.Command{
+		{
+			Type:   "project_update",
+			TempID: uuid.New().String(),
+			UUID:   uuid.New().String(),
+			Args:   p,
+		},
+	}
+	commandsString, _ := json.Marshal(commands)
+	s.c.Logf("\tCommands: %v\n", string(commandsString))
+
+	req, err := s.c.NewRequest("*", commands, &[]string{"projects"})
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.c.Do(context.Background(), req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (s *ProjectService) MoveProject(ID int, ParentID int) (*types.Response, error) {
+	s.c.Log("MoveProject called")
+
+	args := make(map[string]int)
+	args["id"] = ID
+	args["parent_id"] = ParentID
+
+	commands := &[]types.Command{
+		{
+			Type:   "project_move",
+			TempID: uuid.New().String(),
+			UUID:   uuid.New().String(),
+			Args:   args,
+		},
+	}
+	commandsString, _ := json.Marshal(commands)
+	s.c.Logf("\tCommands: %v\n", string(commandsString))
+
+	req, err := s.c.NewRequest("*", commands, &[]string{"projects"})
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.c.Do(context.Background(), req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

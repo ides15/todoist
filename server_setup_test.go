@@ -74,6 +74,10 @@ func Setup() {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(`{`))
 			break
+		case "/empty-response-body":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{}`))
+			break
 		default:
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{

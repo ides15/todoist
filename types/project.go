@@ -18,24 +18,19 @@ type Project struct {
 }
 
 type NewProject struct {
-	Name       string `json:"name"`
-	Color      int    `json:"color"`
-	ParentID   int    `json:"parent_id"`
-	ChildOrder int    `json:"child_order"`
-	IsFavorite int    `json:"is_favorite"`
+	Name       string `json:"name,omitempty"`
+	Color      int    `json:"color,omitempty"`
+	ParentID   int    `json:"parent_id,omitempty"`
+	ChildOrder int    `json:"child_order,omitempty"`
+	IsFavorite int    `json:"is_favorite,omitempty"`
 }
 
 type UpdatedProject struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	Color      int    `json:"color"`
-	Collapsed  int    `json:"collapsed"`
-	IsFavorite int    `json:"is_favorite"`
-}
-
-type MovedProject struct {
-	ID       int `json:"id"`
-	ParentID int `json:"parent_id"`
+	ID         int    `json:"id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Color      int    `json:"color,omitempty"`
+	Collapsed  int    `json:"collapsed,omitempty"`
+	IsFavorite int    `json:"is_favorite,omitempty"`
 }
 
 type DeletedProject struct {

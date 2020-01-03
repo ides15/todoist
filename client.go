@@ -3,6 +3,7 @@ package todoist
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -79,7 +80,13 @@ func (c *Client) NewRequest(syncToken string, commands *[]types.Command, resourc
 	return req, nil
 }
 
-func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
+func newResponse(r *http.Response) *types.Response {
+	res := &types.Response{Raw: r}
+
+	return res
+}
+
+func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*types.Response, error) {
 	req = req.WithContext(ctx)
 
 	res, err := c.client.Do(req)
@@ -95,6 +102,8 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		return nil, err
 	}
 
+	r := newResponse(res)
+
 	if res.StatusCode != http.StatusOK {
 		errorMessage, err := CreateError(res)
 		if err != nil {
@@ -104,7 +113,21 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		return nil, errorMessage
 	}
 
-	return res, nil
+	if v != nil {
+		if w, ok := v.(io.Writer); ok {
+			io.Copy(w, res.Body)
+		} else {
+			decErr := json.NewDecoder(res.Body).Decode(v)
+			if decErr == io.EOF {
+				decErr = nil // ignore EOF errors caused by empty response body
+			}
+			if decErr != nil {
+				err = decErr
+			}
+		}
+	}
+
+	return r, err
 }
 
 func (c *Client) Log(v ...interface{}) {
