@@ -1,10 +1,12 @@
 package todoist
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -239,44 +241,224 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 	return response, err
 }
 
-// TODO: all below
+// BaseError reports an error caused by a Todoist (sync) API request. BaseError
+// will report on any status code response, therefore it is used for non-200 (OK)
+// status code responses.
+type BaseError struct {
+	Response *http.Response `json:"-"` // HTTP response that caused this error
 
-// SyncError reports one or more errors caused by a Todoist (sync) API request.
-// Todoist API docs: https://developer.todoist.com/sync/v8/?shell#response-error
-type SyncError struct {
-	Response *http.Response // HTTP response that caused this error
-
-	ID         int64                  // original resource sync ID
-	Tag        *string                `json:"tag"`         // error tag
-	Code       *int64                 `json:"code"`        // error code
+	Tag        *string                `json:"error_tag"`   // error tag
+	Code       *int64                 `json:"error_code"`  // error code
 	Message    *string                `json:"error"`       // error message
-	HTTPCode   *int64                 `json:"httpcode"`    // error HTTP code
+	HTTPCode   *int64                 `json:"http_code"`   // error HTTP code
 	ErrorExtra map[string]interface{} `json:"error_extra"` // more detail on errors
 }
 
-func (e *SyncError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.Code, *e.Tag, *e.Message)
+func (e BaseError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
 }
 
-// CheckResponse checks the API response for errors, and returns them if
-// present. A response is considered an error if it has a status code not equal
-// to 200 OK.
-// API error responses are expected to have response
-// body, and a JSON response body that maps to ErrorResponse.
-func CheckResponse(r *http.Response) error {
-	c := r.StatusCode
+// BadRequestError is used if the request was incorrect.
+type BadRequestError struct {
+	BaseError
+}
 
-	switch c {
-	case http.StatusOK:
-	case http.StatusBadRequest:
-	case http.StatusUnauthorized:
-	case http.StatusForbidden:
-	case http.StatusNotFound:
-	case http.StatusTooManyRequests:
-	case http.StatusInternalServerError:
-	case http.StatusServiceUnavailable:
-	default:
+func (e BadRequestError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+}
+
+// UnauthorizedError is used if authentication is required, and has failed, or has not yet been provided.
+type UnauthorizedError struct {
+	BaseError
+}
+
+func (e UnauthorizedError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+}
+
+// ForbiddenError is used if the request was valid, but for something that is forbidden.
+type ForbiddenError struct {
+	BaseError
+}
+
+func (e ForbiddenError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+}
+
+// NotFoundError is used if the requested resource could not be found.
+type NotFoundError struct {
+	BaseError
+}
+
+func (e NotFoundError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+}
+
+// TooManyRequestsError is used if the user has sent too many requests in a given amount of time.
+type TooManyRequestsError struct {
+	BaseError
+}
+
+func (e TooManyRequestsError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+}
+
+// InternalServerError is used if the request failed due to a server error.
+type InternalServerError struct {
+	BaseError
+}
+
+func (e InternalServerError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+}
+
+// ServiceUnavailableError is used if the server is currently unable to handle the request.
+type ServiceUnavailableError struct {
+	BaseError
+}
+
+func (e ServiceUnavailableError) Error() string {
+	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+}
+
+// SyncError reports an error caused by a Todoist (sync) API request
+// with a 200 (OK) status code response, and contains an embedded BaseError.
+// Todoist API docs: https://developer.todoist.com/sync/v8/?shell#response-error
+type SyncError struct {
+	BaseError // embedded original error
+
+	ID string `json:"-"` // original command UUID
+}
+
+// CheckResponse checks the API response for an error, and returns it if
+// present. A response is considered an error if it has a status code not equal
+// to 200 OK, or it has values in the `sync_status` field that are not equal
+// to "ok".
+//
+// API error responses are expected to have response bodies, and a JSON response
+// body that maps to SyncError.
+func CheckResponse(r *http.Response) error {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		// TODO: handle this nicer
+		return err
 	}
 
-	return nil
+	if body == nil {
+		return errors.New("response body is nil")
+	}
+
+	switch c := r.StatusCode; c {
+	// The request was processed successfully.
+	// In the Todoist API, a 200 (OK) status code means that the response is at
+	// least partially correct. There might be errors in the sync_status field,
+	// so we still need to check that field for any errors.
+	case http.StatusOK:
+		var cr CommandResponse
+		// TODO: handle this nicer
+		if body != nil {
+			err = json.Unmarshal(body, &cr)
+			if err != nil {
+				// TODO: handle this nicer
+				return err
+			}
+		}
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+
+		// Range through each of the sync_status values, and map
+		// each non "ok" value to a SyncError struct
+		for cmdID, cmdResult := range cr.SyncStatus {
+			if cmdResult != "ok" {
+				// Serialize the command result back into an "unmarshallable" string
+				cmdResultBytes, _ := json.Marshal(cmdResult)
+
+				var syncErr SyncError
+				err = json.Unmarshal(cmdResultBytes, &syncErr)
+				if err != nil {
+					return err
+				}
+
+				syncErr.ID = cmdID
+
+				return syncErr
+			}
+		}
+
+		return nil
+
+	// The request was incorrect.
+	case http.StatusBadRequest:
+		var badRequestError BadRequestError
+		if err := json.Unmarshal(body, &badRequestError); err != nil {
+			return err
+		}
+
+		return badRequestError
+
+	// Authentication is required, and has failed, or has not yet been provided.
+	case http.StatusUnauthorized:
+		var unauthorizedError UnauthorizedError
+		if err := json.Unmarshal(body, &unauthorizedError); err != nil {
+			return err
+		}
+
+		return unauthorizedError
+
+	// The request was valid, but for something that is forbidden.
+	case http.StatusForbidden:
+		var forbiddenError ForbiddenError
+		if err := json.Unmarshal(body, &forbiddenError); err != nil {
+			return err
+		}
+
+		return forbiddenError
+
+	// The requested resource could not be found.
+	case http.StatusNotFound:
+		var notFoundError NotFoundError
+		if err := json.Unmarshal(body, &notFoundError); err != nil {
+			return err
+		}
+
+		return notFoundError
+
+	// The user has sent too many requests in a given amount of time.
+	case http.StatusTooManyRequests:
+		var tooManyRequestsError TooManyRequestsError
+		if err := json.Unmarshal(body, &tooManyRequestsError); err != nil {
+			return err
+		}
+
+		return tooManyRequestsError
+
+	// The request failed due to a server error.
+	case http.StatusInternalServerError:
+		var internalServerError InternalServerError
+		if err := json.Unmarshal(body, &internalServerError); err != nil {
+			return err
+		}
+
+		return internalServerError
+
+	// The server is currently unable to handle the request.
+	case http.StatusServiceUnavailable:
+		var serviceUnavailableError ServiceUnavailableError
+		if err := json.Unmarshal(body, &serviceUnavailableError); err != nil {
+			return err
+		}
+
+		return serviceUnavailableError
+
+	default:
+		unknownError := BaseError{
+			Response:   r,
+			Tag:        pString("UNKNOWN_ERROR"),
+			Code:       nil,
+			Message:    pString("Unknown error occured."),
+			HTTPCode:   pInt64(int64(r.StatusCode)),
+			ErrorExtra: map[string]interface{}{},
+		}
+
+		return unknownError
+	}
 }
