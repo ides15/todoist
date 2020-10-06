@@ -92,7 +92,8 @@ func Test_Projects(t *testing.T) {
 
 	// Update the project we just added
 	projects, _, err = client.Projects.Update(context.Background(), "", &todoist.UpdateProject{
-		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])), // get the temp ID of the project we just added so we can update the title
+		// get the temp ID of the project we just added so we can update the title
+		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])),
 		Name: "an *updated* project!!!",
 	})
 	if err != nil {
