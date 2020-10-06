@@ -39,71 +39,68 @@ Through `todoist.Client`, you can work with any Todoist resource (projects, note
 
 ### Projects
 
+(see the test files for the most up-to-date examples)
+
 ```go
 package todoist_test
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/ides15/todoist/todoist"
 )
 
 var (
-    // Get the Todoist API token from an environment variable
+	// Get the Todoist API token from an environment variable
 	apiToken = os.Getenv("TODOIST_API_TOKEN")
 )
 
-func getFirstFromMap(m map[string]int64) string {
-	for key := range m {
-		return key
-	}
-
-	return ""
-}
-
 func Test_Projects(t *testing.T) {
-    // Create the client to interact with Todoist
+	// Create the client to interact with Todoist
 	client, err := todoist.NewClient(apiToken, true)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
-    // List all projects
+	// List all projects
 	projects, _, err := client.Projects.List(context.Background(), "")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	for _, project := range projects {
-		fmt.Println(*project.ID, *project.Name)
+		t.Log(*project.ID, *project.Name)
 	}
 
-    // Add a new project
+	// Add a new project
+	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
+	tempID := "e061fa23-524b-4665-9034-05928dc47617"
 	projects, resp, err := client.Projects.Add(context.Background(), "", &todoist.AddProject{
-		Name: "not another new project...",
+		Name:   "first new project...",
+		TempID: tempID,
 	})
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	for _, project := range projects {
-		fmt.Println(*project.ID, *project.Name)
+		t.Log(*project.ID, *project.Name)
 	}
 
-    // Update the project we just added
+	// Update the project we just added
 	projects, _, err = client.Projects.Update(context.Background(), "", &todoist.UpdateProject{
-		ID:   getFirstFromMap(resp.TempIDMapping), // get the temp ID of the project we just added so we can update the title
+		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])), // get the temp ID of the project we just added so we can update the title
 		Name: "an *updated* project!!!",
 	})
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	for _, project := range projects {
-		fmt.Println(*project.ID, *project.Name)
+		t.Log(*project.ID, *project.Name)
 	}
 }
 ```

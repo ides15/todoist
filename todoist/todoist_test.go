@@ -40,6 +40,7 @@ func Test_Projects(t *testing.T) {
 	}
 
 	// Add a new project
+	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
 	tempID := "e061fa23-524b-4665-9034-05928dc47617"
 	projects, resp, err := client.Projects.Add(context.Background(), "", &todoist.AddProject{
 		Name:   "first new project...",
