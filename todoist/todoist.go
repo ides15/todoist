@@ -57,17 +57,19 @@ type service struct {
 }
 
 // NewClient returns a new Todoist API client.
-func NewClient(apiToken string, debug bool) (*Client, error) {
+func NewClient(apiToken string, client *http.Client, debug bool) (*Client, error) {
 	if apiToken == "" {
 		return nil, errors.New("apiToken cannot be empty")
 	}
 
-	httpClient := &http.Client{}
+	if client == nil {
+		client = &http.Client{}
+	}
 
 	baseURL, _ := url.Parse(defaultBaseURL)
 
 	c := &Client{
-		client:    httpClient,
+		client:    client,
 		Debug:     debug,
 		BaseURL:   baseURL,
 		APIToken:  apiToken,
