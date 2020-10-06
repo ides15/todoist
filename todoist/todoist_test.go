@@ -2,8 +2,8 @@ package todoist_test
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/ides15/todoist/todoist"
@@ -26,41 +26,43 @@ func Test_Projects(t *testing.T) {
 	// Create the client to interact with Todoist
 	client, err := todoist.NewClient(apiToken, true)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	// List all projects
 	projects, _, err := client.Projects.List(context.Background(), "")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	for _, project := range projects {
-		fmt.Println(*project.ID, *project.Name)
+		t.Log(*project.ID, *project.Name)
 	}
 
 	// Add a new project
+	tempID := "e061fa23-524b-4665-9034-05928dc47617"
 	projects, resp, err := client.Projects.Add(context.Background(), "", &todoist.AddProject{
-		Name: "not another new project...",
+		Name:   "first new project...",
+		TempID: tempID,
 	})
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	for _, project := range projects {
-		fmt.Println(*project.ID, *project.Name)
+		t.Log(*project.ID, *project.Name)
 	}
 
 	// Update the project we just added
 	projects, _, err = client.Projects.Update(context.Background(), "", &todoist.UpdateProject{
-		ID:   getFirstFromMap(resp.TempIDMapping), // get the temp ID of the project we just added so we can update the title
+		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])), // get the temp ID of the project we just added so we can update the title
 		Name: "an *updated* project!!!",
 	})
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	for _, project := range projects {
-		fmt.Println(*project.ID, *project.Name)
+		t.Log(*project.ID, *project.Name)
 	}
 }

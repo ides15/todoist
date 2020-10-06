@@ -49,24 +49,31 @@ func (s *ProjectsService) List(ctx context.Context, syncToken string) ([]*Projec
 	return readResponse.Projects, readResponse, nil
 }
 
+// AddProject defines the options for creating a new project.
 type AddProject struct {
 	Name       string `json:"name"`
 	Color      int64  `json:"color"`
 	ParentID   int64  `json:"parent_id"`
 	ChildOrder int64  `json:"child_order"`
 	IsFavorite int64  `json:"is_favorite"`
+
+	TempID string `json:"-"`
 }
 
 // Add a new project.
 func (s *ProjectsService) Add(ctx context.Context, syncToken string, addProject *AddProject) ([]*Project, *CommandResponse, error) {
 	s.client.Logln("---------- Projects.Add")
 
-	tempID := uuid.New().String()
+	id := uuid.New().String()
+	tempID := addProject.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
 
 	addCommand := &Command{
 		Type:   "project_add",
 		Args:   addProject,
-		UUID:   uuid.New().String(),
+		UUID:   id,
 		TempID: tempID,
 	}
 
@@ -86,24 +93,31 @@ func (s *ProjectsService) Add(ctx context.Context, syncToken string, addProject 
 	return commandResponse.Projects, commandResponse, nil
 }
 
+// UpdateProject defines the options for updating an existing project.
 type UpdateProject struct {
 	ID         string `json:"id,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Color      int64  `json:"color,omitempty"`
 	Collapsed  int64  `json:"collapsed,omitempty"`
 	IsFavorite int64  `json:"is_favorite,omitempty"`
+
+	TempID string `json:"-"`
 }
 
 // Update an existing project.
 func (s *ProjectsService) Update(ctx context.Context, syncToken string, updateProject *UpdateProject) ([]*Project, *CommandResponse, error) {
 	s.client.Logln("---------- Projects.Update")
 
-	tempID := uuid.New().String()
+	id := uuid.New().String()
+	tempID := updateProject.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
 
 	updateCommand := &Command{
 		Type:   "project_update",
 		Args:   updateProject,
-		UUID:   uuid.New().String(),
+		UUID:   id,
 		TempID: tempID,
 	}
 
