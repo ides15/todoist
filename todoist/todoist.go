@@ -96,17 +96,16 @@ type Command struct {
 func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands []*Command) (*http.Request, error) {
 	form := url.Values{}
 
-	var resourceTypesStr string
-	if len(resourceTypes) != 0 {
-		resourceTypes, err := json.Marshal(resourceTypes)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("resourceTypes unable to be serialized: %v", resourceTypes))
-		}
-		resourceTypesStr = string(resourceTypes)
-	} else {
-		resourceTypes, _ := json.Marshal([]string{"all"})
-		resourceTypesStr = string(resourceTypes)
+	if syncToken == "" {
+		syncToken = "*"
 	}
+	form.Add("sync_token", syncToken)
+
+	if len(resourceTypes) == 0 {
+		resourceTypes = []string{"all"}
+	}
+	resourceTypesBytes, _ := json.Marshal(resourceTypes)
+	resourceTypesStr := string(resourceTypesBytes)
 	form.Add("resource_types", resourceTypesStr)
 
 	if commands != nil && len(commands) != 0 {
@@ -114,15 +113,11 @@ func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands [
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("commands unable to be serialized: %v", commands))
 		}
-		form.Add("commands", string(commandsBytes))
+		commandsStr := string(commandsBytes)
+		form.Add("commands", commandsStr)
 	}
 
 	form.Add("token", c.APIToken)
-
-	if syncToken == "" {
-		syncToken = "*"
-	}
-	form.Add("sync_token", syncToken)
 
 	c.Logln("token\t\t", form.Get("token"))
 	c.Logln("sync_token\t\t", form.Get("sync_token"))
@@ -143,25 +138,12 @@ func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands [
 	return req, nil
 }
 
-// Response is a Todoist API response. This wraps the standard http.Response
-// returned from Todoist.
-type Response struct {
-	*http.Response
-}
-
-// newResponse creates a new Response for the provided http.Response.
-// r must not be nil.
-func newResponse(r *http.Response) *Response {
-	response := &Response{Response: r}
-	return response
-}
-
 // TODO: find out if I really need a ReadResponse and CommandResponse, and if I can just combine them.
 
 // ReadResponse is a Todoist API response for a read request.
 type ReadResponse struct {
-	SyncToken     *string          `json:"sync_token,omitempty"`
 	FullSync      *bool            `json:"full_sync,omitempty"`
+	SyncToken     *string          `json:"sync_token,omitempty"`
 	TempIDMapping map[string]int64 `json:"temp_id_mapping,omitempty"`
 
 	// user	A user object.
@@ -184,8 +166,10 @@ type ReadResponse struct {
 
 // CommandResponse is a Todoist API response for a command request.
 type CommandResponse struct {
-	TempIDMapping map[string]int64       `json:"temp_id_mapping,omitempty"`
+	FullSync      *bool                  `json:"full_sync,omitempty"`
 	SyncStatus    map[string]interface{} `json:"sync_status,omitempty"`
+	SyncToken     *string                `json:"sync_token,omitempty"`
+	TempIDMapping map[string]int64       `json:"temp_id_mapping,omitempty"`
 
 	Projects []*Project `json:"projects,omitempty"`
 }
@@ -198,7 +182,7 @@ type CommandResponse struct {
 //
 // The provided ctx must be non-nil, if it is nil an error is returned. If it is canceled or times out,
 // ctx.Err() will be returned.
-func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Response, error) {
+func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*http.Response, error) {
 	if ctx == nil {
 		return nil, errors.New("context must be non-nil")
 	}
@@ -219,28 +203,20 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 
 	defer resp.Body.Close()
 
-	response := newResponse(resp)
-
-	err = CheckResponse(resp)
+	err = checkResponse(resp)
 	if err != nil {
-		return response, err
+		return resp, err
 	}
 
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
 			io.Copy(w, resp.Body)
 		} else {
-			decErr := json.NewDecoder(resp.Body).Decode(v)
-			if decErr == io.EOF {
-				decErr = nil // ignore EOF errors caused by empty response body
-			}
-			if decErr != nil {
-				err = decErr
-			}
+			err = json.NewDecoder(resp.Body).Decode(v)
 		}
 	}
 
-	return response, err
+	return resp, err
 }
 
 // BaseError reports an error caused by a Todoist (sync) API request. BaseError
@@ -332,14 +308,14 @@ type SyncError struct {
 	ID string `json:"-"` // original command UUID
 }
 
-// CheckResponse checks the API response for an error, and returns it if
+// checkResponse checks the API response for an error, and returns it if
 // present. A response is considered an error if it has a status code not equal
 // to 200 OK, or it has values in the `sync_status` field that are not equal
 // to "ok".
 //
 // API error responses are expected to have response bodies, and a JSON response
 // body that maps to SyncError.
-func CheckResponse(r *http.Response) error {
+func checkResponse(r *http.Response) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		// TODO: handle this nicer
