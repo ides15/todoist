@@ -178,7 +178,7 @@ func (s *ProjectsService) Move(ctx context.Context, syncToken string, moveProjec
 }
 
 type DeleteProject struct {
-	ID string `json:"id,omitempty"`
+	ID string `json:"id"`
 
 	TempID string `json:"-"`
 }
@@ -201,6 +201,45 @@ func (s *ProjectsService) Delete(ctx context.Context, syncToken string, deletePr
 	}
 
 	commands := []*Command{deleteCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"projects"}, commands)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var commandResponse *CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Projects, commandResponse, nil
+}
+
+type ArchiveProject struct {
+	ID string `json:"id"`
+
+	TempID string `json:"-"`
+}
+
+// Archive a project and its descendants.
+func (s *ProjectsService) Archive(ctx context.Context, syncToken string, archiveProject *ArchiveProject) ([]*Project, *CommandResponse, error) {
+	s.client.Logln("---------- Projects.Archive")
+
+	id := uuid.New().String()
+	tempID := archiveProject.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	archiveCommand := &Command{
+		Type:   "project_archive",
+		Args:   archiveProject,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []*Command{archiveCommand}
 
 	req, err := s.client.NewRequest(syncToken, []string{"projects"}, commands)
 	if err != nil {
