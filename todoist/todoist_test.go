@@ -72,7 +72,7 @@ func Test_Projects(t *testing.T) {
 	}
 
 	// Make project 1 a child of project 2
-	projects, _, err = client.Projects.Move(context.Background(), "", &MoveProject{
+	_, _, err = client.Projects.Move(context.Background(), "", &MoveProject{
 		ID:       project2ID,
 		ParentID: project1ID,
 	})
@@ -80,8 +80,22 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	projects, _, err = client.Projects.Archive(context.Background(), "", &ArchiveProject{
+	_, _, err = client.Projects.Archive(context.Background(), "", &ArchiveProject{
 		ID: project1ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
+		ID: project1ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	projects, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
+		ID: project2ID,
 	})
 	if err != nil {
 		t.Fatal(err)

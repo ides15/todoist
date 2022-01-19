@@ -254,3 +254,45 @@ func (s *ProjectsService) Archive(ctx context.Context, syncToken string, archive
 
 	return commandResponse.Projects, commandResponse, nil
 }
+
+type UnarchiveProject struct {
+	ID string `json:"id"`
+
+	TempID string `json:"-"`
+}
+
+// Unarchive a project. No ancestors will be unarchived along with
+// the unarchived project. Instead, the project is unarchived alone,
+// loses any parent relationship (becomes a root project), and is
+// placed at the end of the list of other root projects.
+func (s *ProjectsService) Unarchive(ctx context.Context, syncToken string, unarchiveProject *UnarchiveProject) ([]*Project, *CommandResponse, error) {
+	s.client.Logln("---------- Projects.Unarchive")
+
+	id := uuid.New().String()
+	tempID := unarchiveProject.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	unarchiveCommand := &Command{
+		Type:   "project_unarchive",
+		Args:   unarchiveProject,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []*Command{unarchiveCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"projects"}, commands)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var commandResponse *CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Projects, commandResponse, nil
+}
