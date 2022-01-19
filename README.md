@@ -17,17 +17,11 @@ go get -u github.com/ides15/todoist
 All that is required to set up a client is your Todoist API token, which can be found at https://todoist.com/prefs/integrations
 
 ```go
-client, err := todoist.NewClient("<YOUR_TODOIST_API_TOKEN>", false)
+client, err := todoist.NewClient("<YOUR_TODOIST_API_TOKEN>")
 if err != nil {
     panic(err)
 }
 ```
-
----
-
-**NOTE**
-
-The second parameter to `todoist.NewClient` is a debug flag. If you want logs to be shown in the console, set this to true.
 
 ---
 
@@ -60,7 +54,7 @@ var (
 
 func Test_Projects(t *testing.T) {
 	// Create the client to interact with Todoist
-	client, err := todoist.NewClient(apiToken, true)
+	client, err := todoist.NewClient(apiToken)
 	if err != nil {
 		t.Fatal(err)
 	}

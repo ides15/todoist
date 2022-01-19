@@ -71,7 +71,7 @@ func Test_Client_Logging(t *testing.T) {
 		log.SetOutput(os.Stderr)
 	}()
 
-	c, _ := NewClient("12345", nil, false)
+	c, _ := NewClient("12345")
 
 	// Non-debug Logln
 	c.Logln("test")
@@ -91,7 +91,8 @@ func Test_Client_Logging(t *testing.T) {
 		t.Errorf("expected client to not log, got '%s'", cString)
 	}
 
-	c1, _ := NewClient("12345", nil, true)
+	c1, _ := NewClient("12345")
+	c1.SetDebug(true)
 
 	// Debug Logln
 	c1.Logln("test")
@@ -113,38 +114,46 @@ func Test_Client_Logging(t *testing.T) {
 }
 
 func Test_NewClient(t *testing.T) {
-	_, err := NewClient("", nil, false)
+	_, err := NewClient("")
 	if err == nil {
 		t.Error("expected an error for an empty API token, got nil")
 	}
 
-	c, err := NewClient("12345", nil, false)
+	c, _ := NewClient("12345")
 	emptyClient := &http.Client{}
 	if !reflect.DeepEqual(emptyClient, c.client) {
 		t.Errorf("expected http client to be 'emptyClient', got %+v", c.client)
 	}
 
+	c1, _ := NewClient("12345")
 	timeoutHTTPClient := &http.Client{Timeout: 5 * time.Second}
-	c1, err := NewClient("12345", timeoutHTTPClient, false)
+	c1.SetHttpClient(timeoutHTTPClient)
 	if c1.client != timeoutHTTPClient {
 		t.Errorf("expected http client to be 'timeoutHTTPClient', got %+v", c1.client)
 	}
 
-	if c1.Debug != false {
-		t.Errorf("expected client debug flag to be false, got %t", c1.Debug)
+	if c1.debug != false {
+		t.Error("expected client debug flag to be false, got true")
 	}
 
-	c2, err := NewClient("12345", nil, true)
+	c1.SetDebug(true)
+
+	if c1.debug != true {
+		t.Error("expected client debug flag to be true, got false")
+	}
+
+	c2, err := NewClient("12345")
+	c2.SetDebug(true)
 	if err != nil {
 		t.Errorf("expected no error, received %v", err)
 	}
-	if c2.Debug != true {
-		t.Errorf("expected client debug flag to be true, got %t", c2.Debug)
+	if c2.debug != true {
+		t.Errorf("expected client debug flag to be true, got %t", c2.debug)
 	}
 }
 
 func Test_NewRequest(t *testing.T) {
-	c, err := NewClient("12345", nil, false)
+	c, err := NewClient("12345")
 	if err != nil {
 		t.Errorf("expcted no error, received %v", err)
 	}
@@ -179,12 +188,12 @@ func Test_NewRequest(t *testing.T) {
 	}
 
 	userAgent := req.Header.Get("User-Agent")
-	if userAgent != c.UserAgent {
-		t.Errorf("User-Agent should be %s, received %s", c.UserAgent, userAgent)
+	if userAgent != c.userAgent {
+		t.Errorf("User-Agent should be %s, received %s", c.userAgent, userAgent)
 	}
 
-	c.UserAgent = ""
-	req, err = c.NewRequest("", []string{"projects"}, []*Command{
+	c.userAgent = ""
+	req, _ = c.NewRequest("", []string{"projects"}, []*Command{
 		{
 			Type:   "command_type",
 			Args:   "args",
@@ -212,7 +221,7 @@ func Test_NewRequest(t *testing.T) {
 		t.Errorf("User-Agent should not be set in request, received %s", userAgent)
 	}
 
-	req, err = c.NewRequest("", []string{"all"}, []*Command{
+	_, err = c.NewRequest("", []string{"all"}, []*Command{
 		{
 			Type:   "type",
 			Args:   c.client, // Just need something that is unserializable
@@ -225,7 +234,7 @@ func Test_NewRequest(t *testing.T) {
 	}
 
 	c.BaseURL = &url.URL{Host: "localhost#bad-url"}
-	req, err = c.NewRequest("", []string{"all"}, nil)
+	_, err = c.NewRequest("", []string{"all"}, nil)
 	if err == nil {
 		t.Errorf("expected err in new request, received nil")
 	}

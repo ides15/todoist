@@ -1,12 +1,10 @@
 package todoist
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -24,13 +22,13 @@ const (
 type Client struct {
 	client *http.Client // HTTP client used to communicate with the API.
 
-	Debug bool // Flag denoting if debug logging statements should be shown or not
+	debug bool // Flag denoting if debug logging statements should be shown or not
 
 	BaseURL *url.URL // Base URL for API endpoints. Defaults to the public Todoist API (Sync API).
 
 	APIToken string // API Token for authenticating API calls. Found in the Integrations tab of the Todoist user settings.
 
-	UserAgent string // User agent used when communicating with the Todoist API.
+	userAgent string // User agent used when communicating with the Todoist API.
 
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
@@ -40,16 +38,24 @@ type Client struct {
 
 // Logf logs a format string and values to output if the client's debug mode is set to true.
 func (c *Client) Logf(format string, a ...interface{}) {
-	if c.Debug {
+	if c.debug {
 		log.Printf(format, a...)
 	}
 }
 
 // Logln logs values to output if the client's debug mode is set to true.
 func (c *Client) Logln(a ...interface{}) {
-	if c.Debug {
+	if c.debug {
 		log.Println(a...)
 	}
+}
+
+func (c *Client) SetDebug(debug bool) {
+	c.debug = debug
+}
+
+func (c *Client) SetHttpClient(client *http.Client) {
+	c.client = client
 }
 
 type service struct {
@@ -57,23 +63,19 @@ type service struct {
 }
 
 // NewClient returns a new Todoist API client.
-func NewClient(apiToken string, client *http.Client, debug bool) (*Client, error) {
+func NewClient(apiToken string) (*Client, error) {
 	if apiToken == "" {
 		return nil, errors.New("apiToken cannot be empty")
-	}
-
-	if client == nil {
-		client = &http.Client{}
 	}
 
 	baseURL, _ := url.Parse(defaultBaseURL)
 
 	c := &Client{
-		client:    client,
-		Debug:     debug,
+		client:    &http.Client{},
 		BaseURL:   baseURL,
 		APIToken:  apiToken,
-		UserAgent: userAgent,
+		userAgent: userAgent,
+		debug:     false,
 	}
 
 	c.common.client = c
@@ -108,10 +110,10 @@ func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands [
 	resourceTypesStr := string(resourceTypesBytes)
 	form.Add("resource_types", resourceTypesStr)
 
-	if commands != nil && len(commands) != 0 {
+	if len(commands) != 0 {
 		commandsBytes, err := json.Marshal(commands)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("commands unable to be serialized: %v", commands))
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to serialize commands: %v", commands))
 		}
 		commandsStr := string(commandsBytes)
 		form.Add("commands", commandsStr)
@@ -131,8 +133,8 @@ func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands [
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	if c.UserAgent != "" {
-		req.Header.Set("User-Agent", c.UserAgent)
+	if c.userAgent != "" {
+		req.Header.Set("User-Agent", c.userAgent)
 	}
 
 	return req, nil
@@ -167,8 +169,8 @@ type ReadResponse struct {
 // CommandResponse is a Todoist API response for a command request.
 type CommandResponse struct {
 	FullSync      *bool                  `json:"full_sync,omitempty"`
-	SyncStatus    map[string]interface{} `json:"sync_status,omitempty"`
 	SyncToken     *string                `json:"sync_token,omitempty"`
+	SyncStatus    map[string]interface{} `json:"sync_status,omitempty"`
 	TempIDMapping map[string]int64       `json:"temp_id_mapping,omitempty"`
 
 	Projects []*Project `json:"projects,omitempty"`
@@ -184,7 +186,7 @@ type CommandResponse struct {
 // ctx.Err() will be returned.
 func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*http.Response, error) {
 	if ctx == nil {
-		return nil, errors.New("context must be non-nil")
+		return nil, errors.New("context must not be nil")
 	}
 	req = req.WithContext(ctx)
 
@@ -210,7 +212,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
-			io.Copy(w, resp.Body)
+			if _, err = io.Copy(w, resp.Body); err != nil {
+				return nil, err
+			}
 		} else {
 			err = json.NewDecoder(resp.Body).Decode(v)
 		}
