@@ -39,20 +39,42 @@ func Test_Projects(t *testing.T) {
 
 	// Add a new project
 	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
-	tempID := "e061fa23-524b-4665-9034-05928dc47617"
+	project1TempID := "e061fa23-524b-4665-9034-05928dc47617"
 	_, resp, err := client.Projects.Add(context.Background(), "", &AddProject{
-		Name:   "first new project...",
-		TempID: tempID,
+		Name:   "Parent Project",
+		TempID: project1TempID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	project1ID := strconv.Itoa(int(resp.TempIDMapping[project1TempID]))
+
+	project2TempID := "d170ld31-827l-9060-3333-079235d72581"
+	_, resp, err = client.Projects.Add(context.Background(), "", &AddProject{
+		Name:   "Child Project",
+		TempID: project2TempID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	project2ID := strconv.Itoa(int(resp.TempIDMapping[project2TempID]))
+
 	// Update the project we just added
-	projects, _, err = client.Projects.Update(context.Background(), "", &UpdateProject{
+	_, _, err = client.Projects.Update(context.Background(), "", &UpdateProject{
 		// get the temp ID of the project we just added so we can update the title
-		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])),
-		Name: "an *updated* project!!!",
+		ID:   project1ID,
+		Name: "Updated Project 1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make project 1 a child of project 2
+	projects, _, err = client.Projects.Move(context.Background(), "", &MoveProject{
+		ID:       project2ID,
+		ParentID: project1ID,
 	})
 	if err != nil {
 		t.Fatal(err)

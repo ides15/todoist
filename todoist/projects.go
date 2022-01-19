@@ -52,10 +52,10 @@ func (s *ProjectsService) List(ctx context.Context, syncToken string) ([]*Projec
 // AddProject defines the options for creating a new project.
 type AddProject struct {
 	Name       string `json:"name"`
-	Color      int64  `json:"color"`
-	ParentID   int64  `json:"parent_id"`
-	ChildOrder int64  `json:"child_order"`
-	IsFavorite int64  `json:"is_favorite"`
+	Color      int64  `json:"color,omitempty"`
+	ParentID   int64  `json:"parent_id,omitempty"`
+	ChildOrder int64  `json:"child_order,omitempty"`
+	IsFavorite int64  `json:"is_favorite,omitempty"`
 
 	TempID string `json:"-"`
 }
@@ -95,7 +95,7 @@ func (s *ProjectsService) Add(ctx context.Context, syncToken string, addProject 
 
 // UpdateProject defines the options for updating an existing project.
 type UpdateProject struct {
-	ID         string `json:"id,omitempty"`
+	ID         string `json:"id"`
 	Name       string `json:"name,omitempty"`
 	Color      int64  `json:"color,omitempty"`
 	Collapsed  int64  `json:"collapsed,omitempty"`
@@ -137,12 +137,53 @@ func (s *ProjectsService) Update(ctx context.Context, syncToken string, updatePr
 	return commandResponse.Projects, commandResponse, nil
 }
 
+type MoveProject struct {
+	ID       string `json:"id"`
+	ParentID string `json:"parent_id"`
+
+	TempID string `json:"-"`
+}
+
+// Update parent project relationships of the project.
+func (s *ProjectsService) Move(ctx context.Context, syncToken string, moveProject *MoveProject) ([]*Project, *CommandResponse, error) {
+	s.client.Logln("---------- Projects.Move")
+
+	id := uuid.New().String()
+	tempID := moveProject.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	moveCommand := &Command{
+		Type:   "project_move",
+		Args:   moveProject,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []*Command{moveCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"projects"}, commands)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var commandResponse *CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Projects, commandResponse, nil
+}
+
 type DeleteProject struct {
 	ID string `json:"id,omitempty"`
 
 	TempID string `json:"-"`
 }
 
+// Delete an existing project and all its descendants.
 func (s *ProjectsService) Delete(ctx context.Context, syncToken string, deleteProject *DeleteProject) ([]*Project, *CommandResponse, error) {
 	s.client.Logln("---------- Projects.Delete")
 
