@@ -136,3 +136,41 @@ func (s *ProjectsService) Update(ctx context.Context, syncToken string, updatePr
 
 	return commandResponse.Projects, commandResponse, nil
 }
+
+type DeleteProject struct {
+	ID string `json:"id,omitempty"`
+
+	TempID string `json:"-"`
+}
+
+func (s *ProjectsService) Delete(ctx context.Context, syncToken string, deleteProject *DeleteProject) ([]*Project, *CommandResponse, error) {
+	s.client.Logln("---------- Projects.Delete")
+
+	id := uuid.New().String()
+	tempID := deleteProject.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	deleteCommand := &Command{
+		Type:   "project_delete",
+		Args:   deleteProject,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []*Command{deleteCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"projects"}, commands)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var commandResponse *CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Projects, commandResponse, nil
+}

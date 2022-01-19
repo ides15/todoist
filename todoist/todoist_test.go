@@ -2,11 +2,13 @@ package todoist
 
 import (
 	"bytes"
+	"context"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -17,52 +19,53 @@ var (
 	apiToken = os.Getenv("TODOIST_API_TOKEN")
 )
 
-// func Test_Projects(t *testing.T) {
-// 	// Create the client to interact with Todoist
-// 	client, err := NewClient(apiToken, nil, true)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+func Test_Projects(t *testing.T) {
+	// Create the client to interact with Todoist
+	client, err := NewClient(apiToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.SetDebug(true)
 
-// 	// List all projects
-// 	projects, _, err := client.Projects.List(context.Background(), "")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	// List all projects
+	projects, _, err := client.Projects.List(context.Background(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	for _, project := range projects {
-// 		t.Log(*project.ID, *project.Name)
-// 	}
+	for _, project := range projects {
+		t.Log(*project.ID, *project.Name)
+	}
 
-// 	// Add a new project
-// 	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
-// 	tempID := "e061fa23-524b-4665-9034-05928dc47617"
-// 	projects, resp, err := client.Projects.Add(context.Background(), "", &AddProject{
-// 		Name:   "first new project...",
-// 		TempID: tempID,
-// 	})
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	// Add a new project
+	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
+	tempID := "e061fa23-524b-4665-9034-05928dc47617"
+	_, resp, err := client.Projects.Add(context.Background(), "", &AddProject{
+		Name:   "first new project...",
+		TempID: tempID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	for _, project := range projects {
-// 		t.Log(*project.ID, *project.Name)
-// 	}
+	// Update the project we just added
+	projects, _, err = client.Projects.Update(context.Background(), "", &UpdateProject{
+		// get the temp ID of the project we just added so we can update the title
+		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])),
+		Name: "an *updated* project!!!",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	// Update the project we just added
-// 	projects, _, err = client.Projects.Update(context.Background(), "", &UpdateProject{
-// 		// get the temp ID of the project we just added so we can update the title
-// 		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])),
-// 		Name: "an *updated* project!!!",
-// 	})
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-
-// 	for _, project := range projects {
-// 		t.Log(*project.ID, *project.Name)
-// 	}
-// }
+	for _, project := range projects {
+		if _, _, err = client.Projects.Delete(context.Background(), "", &DeleteProject{
+			ID: strconv.Itoa(int(*project.ID)),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 
 func Test_Client_Logging(t *testing.T) {
 	var buf bytes.Buffer
