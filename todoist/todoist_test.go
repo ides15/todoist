@@ -33,10 +33,6 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, project := range projects {
-		t.Log(*project.ID, *project.Name)
-	}
-
 	// Add a new project
 	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
 	parentProjectTempID := "project1"
@@ -140,6 +136,11 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = client.Projects.GetProjectInfo(context.Background(), "", parentProjectID, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for _, project := range projects {
 		if _, _, err = client.Projects.Delete(context.Background(), "", &DeleteProject{
 			ID: strconv.Itoa(int(*project.ID)),
@@ -212,7 +213,7 @@ func Test_NewClient(t *testing.T) {
 
 	c1, _ := NewClient("12345")
 	timeoutHTTPClient := &http.Client{Timeout: 5 * time.Second}
-	c1.SetHttpClient(timeoutHTTPClient)
+	c1.SetHTTPClient(timeoutHTTPClient)
 	if c1.client != timeoutHTTPClient {
 		t.Errorf("expected http client to be 'timeoutHTTPClient', got %+v", c1.client)
 	}

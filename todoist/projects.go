@@ -2,6 +2,11 @@ package todoist
 
 import (
 	"context"
+	"io"
+	"io/ioutil"
+	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -339,4 +344,68 @@ func (s *ProjectsService) Reorder(ctx context.Context, syncToken string, reorder
 	}
 
 	return commandResponse.Projects, commandResponse, nil
+}
+
+type ProjectInfo struct {
+	Project *Project
+	Notes   []interface{} // TODO use the actual notes struct
+}
+
+// This function is used to extract detailed information about the project,
+// including all the notes. It's especially important because on initial load
+// we return no more than the last 10 notes. If a client requires more, they
+// can be downloaded using this endpoint. It returns a JSON object with the
+// project, and optionally the notes attributes.
+func (s *ProjectsService) GetProjectInfo(ctx context.Context, syncToken string, ID string, allData bool) (*ProjectInfo, error) {
+	s.client.Logln("---------- Projects.GetProjectInfo")
+
+	s.client.SetDebug(false)
+	req, err := s.client.NewRequest(syncToken, []string{}, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.client.SetDebug(true)
+
+	// Update the URL
+	req.URL, _ = url.Parse(defaultBaseURL + "/projects/get")
+
+	// Parse the request body
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	form, err := url.ParseQuery(string(body))
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the "commands" form field since we don't use it in this request
+	form.Del("commands")
+
+	// Add GetProjectInfo-specific fields
+	form.Add("project_id", ID)
+	form.Add("all_data", strconv.FormatBool(allData))
+
+	for k := range form {
+		s.client.Logf("%-15s %-30s\n", k, form.Get(k))
+	}
+	s.client.Logln()
+
+	bodyReader := strings.NewReader(form.Encode())
+
+	// Set the updated content-length header or else http/2 will complain about
+	// request body being larger than the content length
+	req.ContentLength = int64(bodyReader.Len())
+
+	// Add encoded form back to the original request body
+	req.Body = io.NopCloser(bodyReader)
+
+	var projectInfoResponse *ProjectInfo
+	_, err = s.client.Do(ctx, req, &projectInfoResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return projectInfoResponse, nil
 }
