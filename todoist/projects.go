@@ -296,3 +296,47 @@ func (s *ProjectsService) Unarchive(ctx context.Context, syncToken string, unarc
 
 	return commandResponse.Projects, commandResponse, nil
 }
+
+type ReorderedProject struct {
+	ID         string `json:"id"`
+	ChildOrder int32  `json:"child_order"`
+}
+
+type ReorderProjects struct {
+	Projects []ReorderedProject `json:"projects"`
+
+	TempID string `json:"-"`
+}
+
+// The command updates `child_order` properties of items in bulk.
+func (s *ProjectsService) Reorder(ctx context.Context, syncToken string, reorderProjects *ReorderProjects) ([]*Project, *CommandResponse, error) {
+	s.client.Logln("---------- Projects.Reorder")
+
+	id := uuid.New().String()
+	tempID := reorderProjects.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	reorderProjectsCommand := &Command{
+		Type:   "project_reorder",
+		Args:   reorderProjects,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []*Command{reorderProjectsCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"projects"}, commands)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var commandResponse *CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Projects, commandResponse, nil
+}

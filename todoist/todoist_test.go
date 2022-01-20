@@ -39,63 +39,102 @@ func Test_Projects(t *testing.T) {
 
 	// Add a new project
 	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
-	project1TempID := "e061fa23-524b-4665-9034-05928dc47617"
+	parentProjectTempID := "project1"
 	_, resp, err := client.Projects.Add(context.Background(), "", &AddProject{
 		Name:   "Parent Project",
-		TempID: project1TempID,
+		TempID: parentProjectTempID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	project1ID := strconv.Itoa(int(resp.TempIDMapping[project1TempID]))
+	parentProjectID := strconv.Itoa(int(resp.TempIDMapping[parentProjectTempID]))
 
-	project2TempID := "d170ld31-827l-9060-3333-079235d72581"
+	childProject1TempID := "project2"
 	_, resp, err = client.Projects.Add(context.Background(), "", &AddProject{
-		Name:   "Child Project",
-		TempID: project2TempID,
+		Name:   "Child Project 1",
+		TempID: childProject1TempID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	project2ID := strconv.Itoa(int(resp.TempIDMapping[project2TempID]))
+	childProject1ID := strconv.Itoa(int(resp.TempIDMapping[childProject1TempID]))
+
+	childProject2TempID := "project3"
+	_, resp, err = client.Projects.Add(context.Background(), "", &AddProject{
+		Name:   "Child Project 2",
+		TempID: childProject2TempID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	childProject2ID := strconv.Itoa(int(resp.TempIDMapping[childProject2TempID]))
 
 	// Update the project we just added
 	_, _, err = client.Projects.Update(context.Background(), "", &UpdateProject{
 		// get the temp ID of the project we just added so we can update the title
-		ID:   project1ID,
+		ID:   parentProjectID,
 		Name: "Updated Project 1",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Make project 1 a child of project 2
+	// Make project 2 a child of project 1
 	_, _, err = client.Projects.Move(context.Background(), "", &MoveProject{
-		ID:       project2ID,
-		ParentID: project1ID,
+		ID:       childProject1ID,
+		ParentID: parentProjectID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make project 3 a child of project 1
+	_, _, err = client.Projects.Move(context.Background(), "", &MoveProject{
+		ID:       childProject2ID,
+		ParentID: parentProjectID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = client.Projects.Reorder(context.Background(), "", &ReorderProjects{
+		Projects: []ReorderedProject{
+			{
+				ID:         childProject2ID,
+				ChildOrder: 0,
+			},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, _, err = client.Projects.Archive(context.Background(), "", &ArchiveProject{
-		ID: project1ID,
+		ID: parentProjectID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
-		ID: project1ID,
+		ID: parentProjectID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
+		ID: childProject1ID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	projects, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
-		ID: project2ID,
+		ID: childProject2ID,
 	})
 	if err != nil {
 		t.Fatal(err)
