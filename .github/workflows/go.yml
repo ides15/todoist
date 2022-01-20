@@ -1,33 +1,33 @@
 name: Go
 on: [push]
 jobs:
-    build:
-        name: Build
-        runs-on: ubuntu-latest
-        steps:
-            - name: Set up Go 1.14
-              uses: actions/setup-go@v1
-              with:
-                  go-version: "1.14" # The Go version to download (if necessary) and use.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.17
+        uses: actions/setup-go@v1
+        with:
+          go-version: "1.17" # The Go version to download (if necessary) and use.
 
-            - name: Checkout
-              uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-            - name: Get dependencies
-              run: go get -v -t -d ./...
+      - name: Get dependencies
+        run: go get -v -t -d ./...
 
-            - name: Lint project with morphy/revive
-              uses: docker://morphy/revive-action:v1
-              with:
-                  config: revive.toml
+      - name: Lint project with morphy/revive
+        uses: docker://morphy/revive-action:v1
+        with:
+          config: revive.toml
 
-            - name: Format
-              run: go fmt ./...
+      - name: Format
+        run: go fmt ./...
 
-            - name: Vet
-              run: go vet ./...
+      - name: Vet
+        run: go vet ./...
 
-            - name: Test
-              run: go test ./... -cover -failfast -race
-              env:
-                  TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+      - name: Test
+        run: go test ./... -cover -failfast -race
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
