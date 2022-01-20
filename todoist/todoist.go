@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.todoist.com/sync/v8/sync"
+	defaultBaseURL = "https://api.todoist.com/sync/v8"
 	userAgent      = "todoist-go/1.0.0"
 )
 
@@ -54,7 +54,7 @@ func (c *Client) SetDebug(debug bool) {
 	c.debug = debug
 }
 
-func (c *Client) SetHttpClient(client *http.Client) {
+func (c *Client) SetHTTPClient(client *http.Client) {
 	c.client = client
 }
 
@@ -68,7 +68,7 @@ func NewClient(apiToken string) (*Client, error) {
 		return nil, errors.New("apiToken cannot be empty")
 	}
 
-	baseURL, _ := url.Parse(defaultBaseURL)
+	baseURL, _ := url.Parse(defaultBaseURL + "/sync")
 
 	c := &Client{
 		client:    &http.Client{},
@@ -121,10 +121,9 @@ func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands [
 
 	form.Add("token", c.APIToken)
 
-	c.Logln("token\t\t", form.Get("token"))
-	c.Logln("sync_token\t\t", form.Get("sync_token"))
-	c.Logln("resource_types\t", form.Get("resource_types"))
-	c.Logln("commands\t\t", form.Get("commands"))
+	for k := range form {
+		c.Logf("%-15s %-30s\n", k, form.Get(k))
+	}
 	c.Logln()
 
 	req, err := http.NewRequest(http.MethodPost, c.BaseURL.String(), strings.NewReader(form.Encode()))
