@@ -347,8 +347,8 @@ func (s *ProjectsService) Reorder(ctx context.Context, syncToken string, reorder
 }
 
 type ProjectInfo struct {
-	Project *Project
-	Notes   []interface{} // TODO use the actual notes struct
+	Project *Project      `json:"project"`
+	Notes   []interface{} `json:"notes"` // TODO use the actual notes struct
 }
 
 // This function is used to extract detailed information about the project,
@@ -408,4 +408,65 @@ func (s *ProjectsService) GetProjectInfo(ctx context.Context, syncToken string, 
 	}
 
 	return projectInfoResponse, nil
+}
+
+type ProjectData struct {
+	Project  *Project      `json:"project"`
+	Notes    []interface{} `json:"project_notes"` // TODO use the actual notes struct
+	Sections []interface{} `json:"sections"`      // TODO use the actual sections struct
+	Items    []interface{} `json:"items"`         // TODO use the actual items struct
+}
+
+// Gets a JSON object with the project, its notes, sections and any uncompleted items.
+func (s *ProjectsService) GetProjectData(ctx context.Context, syncToken string, projectID string) (*ProjectData, error) {
+	s.client.Logln("---------- Projects.GetProjectData")
+
+	s.client.SetDebug(false)
+	req, err := s.client.NewRequest(syncToken, []string{}, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.client.SetDebug(true)
+
+	// Update the URL
+	req.URL, _ = url.Parse(defaultBaseURL + "/projects/get_data")
+
+	// Parse the request body
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	form, err := url.ParseQuery(string(body))
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the "commands" form field since we don't use it in this request
+	form.Del("commands")
+
+	// Add GetProjectData-specific fields
+	form.Add("project_id", projectID)
+
+	for k := range form {
+		s.client.Logf("%-15s %-30s\n", k, form.Get(k))
+	}
+	s.client.Logln()
+
+	bodyReader := strings.NewReader(form.Encode())
+
+	// Set the updated content-length header or else http/2 will complain about
+	// request body being larger than the content length
+	req.ContentLength = int64(bodyReader.Len())
+
+	// Add encoded form back to the original request body
+	req.Body = io.NopCloser(bodyReader)
+
+	var projectDataResponse *ProjectData
+	_, err = s.client.Do(ctx, req, &projectDataResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return projectDataResponse, nil
 }

@@ -141,6 +141,11 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = client.Projects.GetProjectData(context.Background(), "", parentProjectID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for _, project := range projects {
 		if _, _, err = client.Projects.Delete(context.Background(), "", &DeleteProject{
 			ID: strconv.Itoa(int(*project.ID)),
