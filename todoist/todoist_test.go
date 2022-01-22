@@ -33,10 +33,6 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, project := range projects {
-		t.Log(project)
-	}
-
 	// Add a new project
 	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
 	parentProjectTempID := "project1"

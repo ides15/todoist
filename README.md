@@ -66,13 +66,13 @@ func Test_Projects(t *testing.T) {
 	}
 
 	for _, project := range projects {
-		t.Log(*project.ID, *project.Name)
+		t.Log(project.ID, project.Name)
 	}
 
 	// Add a new project
 	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
 	tempID := "e061fa23-524b-4665-9034-05928dc47617"
-	projects, resp, err := client.Projects.Add(context.Background(), "", &todoist.AddProject{
+	projects, resp, err := client.Projects.Add(context.Background(), "", todoist.AddProject{
 		Name:   "first new project...",
 		TempID: tempID,
 	})
@@ -81,11 +81,11 @@ func Test_Projects(t *testing.T) {
 	}
 
 	for _, project := range projects {
-		t.Log(*project.ID, *project.Name)
+		t.Log(project.ID, project.Name)
 	}
 
 	// Update the project we just added
-	projects, _, err = client.Projects.Update(context.Background(), "", &todoist.UpdateProject{
+	projects, _, err = client.Projects.Update(context.Background(), "", todoist.UpdateProject{
 		// get the temp ID of the project we just added so we can update the title
 		ID:   strconv.Itoa(int(resp.TempIDMapping[tempID])),
 		Name: "an *updated* project!!!",
@@ -95,7 +95,7 @@ func Test_Projects(t *testing.T) {
 	}
 
 	for _, project := range projects {
-		t.Log(*project.ID, *project.Name)
+		t.Log(project.ID, project.Name)
 	}
 }
 ```

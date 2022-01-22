@@ -16,15 +16,15 @@ import (
 type BaseError struct {
 	Response *http.Response `json:"-"` // HTTP response that caused this error
 
-	Tag        *string                `json:"error_tag"`   // error tag
-	Code       *int64                 `json:"error_code"`  // error code
-	Message    *string                `json:"error"`       // error message
-	HTTPCode   *int64                 `json:"http_code"`   // error HTTP code
+	Tag        string                 `json:"error_tag"`   // error tag
+	Code       int                    `json:"error_code"`  // error code
+	Message    string                 `json:"error"`       // error message
+	HTTPCode   int                    `json:"http_code"`   // error HTTP code
 	ErrorExtra map[string]interface{} `json:"error_extra"` // more detail on errors
 }
 
 func (e BaseError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // BadRequestError is used if the request was incorrect.
@@ -33,7 +33,7 @@ type BadRequestError struct {
 }
 
 func (e BadRequestError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // UnauthorizedError is used if authentication is required, and has failed, or has not yet been provided.
@@ -42,7 +42,7 @@ type UnauthorizedError struct {
 }
 
 func (e UnauthorizedError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // ForbiddenError is used if the request was valid, but for something that is forbidden.
@@ -51,7 +51,7 @@ type ForbiddenError struct {
 }
 
 func (e ForbiddenError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // NotFoundError is used if the requested resource could not be found.
@@ -60,7 +60,7 @@ type NotFoundError struct {
 }
 
 func (e NotFoundError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // TooManyRequestsError is used if the user has sent too many requests in a given amount of time.
@@ -69,7 +69,7 @@ type TooManyRequestsError struct {
 }
 
 func (e TooManyRequestsError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // InternalServerError is used if the request failed due to a server error.
@@ -78,7 +78,7 @@ type InternalServerError struct {
 }
 
 func (e InternalServerError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // ServiceUnavailableError is used if the server is currently unable to handle the request.
@@ -87,7 +87,7 @@ type ServiceUnavailableError struct {
 }
 
 func (e ServiceUnavailableError) Error() string {
-	return fmt.Sprintf("(%d) %s: %s", *e.HTTPCode, *e.Tag, *e.Message)
+	return fmt.Sprintf("(%d) %s: %s", e.HTTPCode, e.Tag, e.Message)
 }
 
 // SyncError reports an error caused by a Todoist (sync) API request
@@ -219,10 +219,9 @@ func checkResponseForErrors(r *http.Response) error {
 	default:
 		unknownError := BaseError{
 			Response:   r,
-			Tag:        pString("UNKNOWN_ERROR"),
-			Code:       nil,
-			Message:    pString("Unknown error occured."),
-			HTTPCode:   pInt64(int64(r.StatusCode)),
+			Tag:        "UNKNOWN_ERROR",
+			Message:    "Unknown error occured.",
+			HTTPCode:   r.StatusCode,
 			ErrorExtra: map[string]interface{}{},
 		}
 
