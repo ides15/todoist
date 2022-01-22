@@ -204,7 +204,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	defer resp.Body.Close()
 
-	err = checkResponseForErrors(resp)
+	err = checkResponseForErrors(resp, v)
 	if err != nil {
 		return resp, err
 	}

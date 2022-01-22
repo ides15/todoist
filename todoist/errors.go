@@ -106,7 +106,7 @@ type SyncError struct {
 //
 // API error responses are expected to have response bodies, and a JSON response
 // body that maps to SyncError.
-func checkResponseForErrors(r *http.Response) error {
+func checkResponseForErrors(r *http.Response, v interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		// TODO: handle this nicer
@@ -119,39 +119,44 @@ func checkResponseForErrors(r *http.Response) error {
 
 	switch c := r.StatusCode; c {
 	// The request was processed successfully.
-	// In the Todoist API, a 200 (OK) status code means that the response is at
-	// least partially correct. There might be errors in the sync_status field,
-	// so we still need to check that field for any errors.
+	// In the Todoist API, a 200 (OK) status code means that the response is at least
+	// partially correct. If the response is a CommandResponse, there might be errors
+	// in the sync_status field, so we still need to check that field for any errors.
 	case http.StatusOK:
-		var cr CommandResponse
-		// TODO: handle this nicer
-
-		if err = json.Unmarshal(body, &cr); err != nil {
+		if err = json.Unmarshal(body, &v); err != nil {
 			// TODO: handle this nicer
 			return err
 		}
 
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
-		// Range through each of the sync_status values, and map
-		// each non "ok" value to a SyncError struct
-		for cmdID, cmdResult := range cr.SyncStatus {
-			if cmdResult != "ok" {
-				// Serialize the command result back into an "unmarshallable" string
-				cmdResultBytes, _ := json.Marshal(cmdResult)
+		switch vType := v.(type) {
+		case CommandResponse:
+			cr := vType
 
-				var syncErr SyncError
-				if err = json.Unmarshal(cmdResultBytes, &syncErr); err != nil {
-					return err
+			// Range through each of the sync_status values, and map
+			// each non "ok" value to a SyncError struct
+			for cmdID, cmdResult := range cr.SyncStatus {
+				if cmdResult != "ok" {
+					// Serialize the command result back into an "unmarshallable" string
+					cmdResultBytes, _ := json.Marshal(cmdResult)
+
+					var syncErr SyncError
+					if err = json.Unmarshal(cmdResultBytes, &syncErr); err != nil {
+						return err
+					}
+
+					syncErr.ID = cmdID
+
+					return syncErr
 				}
-
-				syncErr.ID = cmdID
-
-				return syncErr
 			}
-		}
 
-		return nil
+			return nil
+
+		default:
+			return nil
+		}
 
 	// The request was incorrect.
 	case http.StatusBadRequest:

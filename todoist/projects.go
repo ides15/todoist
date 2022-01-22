@@ -2,6 +2,7 @@ package todoist
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -469,4 +470,71 @@ func (s *ProjectsService) GetProjectData(ctx context.Context, syncToken string, 
 	}
 
 	return projectDataResponse, nil
+}
+
+type Pagination struct {
+	// The maximum number of archived projects to return (between 1 and 500, default is 500).
+	Limit int
+	// The offset of the first archived project to return, for pagination purposes (first page is 0).
+	Offset int
+}
+
+// Get the user's archived projects.
+//
+// Purposefully leaving `pagination` as a pointer so the caller can optionally pass in
+// pagination details. If pagination details are not provided, they are not added to the request.
+func (s *ProjectsService) GetArchivedProjects(ctx context.Context, syncToken string, pagination *Pagination) ([]Project, error) {
+	s.client.Logln("---------- Projects.GetArchivedProjects")
+
+	s.client.SetDebug(false)
+	req, err := s.client.NewRequest(syncToken, []string{}, nil)
+	if err != nil {
+		return []Project{}, err
+	}
+	s.client.SetDebug(true)
+
+	// Update the URL
+	req.URL, _ = url.Parse(defaultBaseURL + "/projects/get_archived")
+
+	// Parse the request body
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return []Project{}, err
+	}
+
+	form, err := url.ParseQuery(string(body))
+	if err != nil {
+		return []Project{}, err
+	}
+
+	// Remove the "commands" form field since we don't use it in this request
+	form.Del("commands")
+
+	// Add GetProjectData-specific fields
+	if pagination != nil {
+		form.Add("limit", fmt.Sprint(pagination.Limit))
+		form.Add("offset", fmt.Sprint(pagination.Offset))
+	}
+
+	for k := range form {
+		s.client.Logf("%-15s %-30s\n", k, form.Get(k))
+	}
+	s.client.Logln()
+
+	bodyReader := strings.NewReader(form.Encode())
+
+	// Set the updated content-length header or else http/2 will complain about
+	// request body being larger than the content length
+	req.ContentLength = int64(bodyReader.Len())
+
+	// Add encoded form back to the original request body
+	req.Body = io.NopCloser(bodyReader)
+
+	var archivedProjectsResponse []Project
+	_, err = s.client.Do(ctx, req, &archivedProjectsResponse)
+	if err != nil {
+		return []Project{}, err
+	}
+
+	return archivedProjectsResponse, nil
 }

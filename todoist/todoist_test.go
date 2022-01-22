@@ -115,20 +115,6 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = client.Projects.Unarchive(context.Background(), "", UnarchiveProject{
-		ID: parentProjectID,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, _, err = client.Projects.Unarchive(context.Background(), "", UnarchiveProject{
-		ID: childProject1ID,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	projects, _, err = client.Projects.Unarchive(context.Background(), "", UnarchiveProject{
 		ID: childProject2ID,
 	})
@@ -146,9 +132,31 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	archivedProejcts, err := client.Projects.GetArchivedProjects(context.Background(), "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	archivedProjectsP, err := client.Projects.GetArchivedProjects(context.Background(), "", &Pagination{Limit: 1, Offset: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(archivedProjectsP) != 1 {
+		t.Fatalf("expected the number of archived projects returned to be 1, received %d", len(archivedProjectsP))
+	}
+
 	for _, project := range projects {
 		if _, _, err = client.Projects.Delete(context.Background(), "", DeleteProject{
 			ID: strconv.Itoa(project.ID),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, archivedProject := range archivedProejcts {
+		if _, _, err = client.Projects.Delete(context.Background(), "", DeleteProject{
+			ID: strconv.Itoa(archivedProject.ID),
 		}); err != nil {
 			t.Fatal(err)
 		}
