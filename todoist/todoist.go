@@ -95,7 +95,7 @@ type Command struct {
 
 // NewRequest creates an API request. If specified, the value pointed to
 // by body is JSON encoded and included as the request body.
-func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands []*Command) (*http.Request, error) {
+func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands []Command) (*http.Request, error) {
 	form := url.Values{}
 
 	if syncToken == "" {
@@ -143,12 +143,12 @@ func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands [
 
 // ReadResponse is a Todoist API response for a read request.
 type ReadResponse struct {
-	FullSync      *bool            `json:"full_sync,omitempty"`
-	SyncToken     *string          `json:"sync_token,omitempty"`
-	TempIDMapping map[string]int64 `json:"temp_id_mapping,omitempty"`
+	FullSync      bool             `json:"full_sync"`
+	SyncToken     string           `json:"sync_token"`
+	TempIDMapping map[string]int64 `json:"temp_id_mapping"`
 
 	// user	A user object.
-	Projects []*Project `json:"projects,omitempty"`
+	Projects []Project `json:"projects"`
 	// items	An array of item objects.
 	// notes	An array of item note objects.
 	// project_notes	An array of project note objects.
@@ -167,12 +167,12 @@ type ReadResponse struct {
 
 // CommandResponse is a Todoist API response for a command request.
 type CommandResponse struct {
-	FullSync      *bool                  `json:"full_sync,omitempty"`
-	SyncToken     *string                `json:"sync_token,omitempty"`
-	SyncStatus    map[string]interface{} `json:"sync_status,omitempty"`
-	TempIDMapping map[string]int64       `json:"temp_id_mapping,omitempty"`
+	FullSync      bool                   `json:"full_sync"`
+	SyncToken     string                 `json:"sync_token"`
+	SyncStatus    map[string]interface{} `json:"sync_status"`
+	TempIDMapping map[string]int64       `json:"temp_id_mapping"`
 
-	Projects []*Project `json:"projects,omitempty"`
+	Projects []Project `json:"projects"`
 }
 
 // Do sends an API request and returns the API response. The API response is

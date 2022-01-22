@@ -33,10 +33,14 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	for _, project := range projects {
+		t.Log(project)
+	}
+
 	// Add a new project
 	// Specify a TempID if you want to use it in the future, otherwise it will create one for you
 	parentProjectTempID := "project1"
-	_, resp, err := client.Projects.Add(context.Background(), "", &AddProject{
+	_, resp, err := client.Projects.Add(context.Background(), "", AddProject{
 		Name:   "Parent Project",
 		TempID: parentProjectTempID,
 	})
@@ -47,7 +51,7 @@ func Test_Projects(t *testing.T) {
 	parentProjectID := strconv.Itoa(int(resp.TempIDMapping[parentProjectTempID]))
 
 	childProject1TempID := "project2"
-	_, resp, err = client.Projects.Add(context.Background(), "", &AddProject{
+	_, resp, err = client.Projects.Add(context.Background(), "", AddProject{
 		Name:   "Child Project 1",
 		TempID: childProject1TempID,
 	})
@@ -58,7 +62,7 @@ func Test_Projects(t *testing.T) {
 	childProject1ID := strconv.Itoa(int(resp.TempIDMapping[childProject1TempID]))
 
 	childProject2TempID := "project3"
-	_, resp, err = client.Projects.Add(context.Background(), "", &AddProject{
+	_, resp, err = client.Projects.Add(context.Background(), "", AddProject{
 		Name:   "Child Project 2",
 		TempID: childProject2TempID,
 	})
@@ -69,7 +73,7 @@ func Test_Projects(t *testing.T) {
 	childProject2ID := strconv.Itoa(int(resp.TempIDMapping[childProject2TempID]))
 
 	// Update the project we just added
-	_, _, err = client.Projects.Update(context.Background(), "", &UpdateProject{
+	_, _, err = client.Projects.Update(context.Background(), "", UpdateProject{
 		// get the temp ID of the project we just added so we can update the title
 		ID:   parentProjectID,
 		Name: "Updated Project 1",
@@ -79,7 +83,7 @@ func Test_Projects(t *testing.T) {
 	}
 
 	// Make project 2 a child of project 1
-	_, _, err = client.Projects.Move(context.Background(), "", &MoveProject{
+	_, _, err = client.Projects.Move(context.Background(), "", MoveProject{
 		ID:       childProject1ID,
 		ParentID: parentProjectID,
 	})
@@ -88,7 +92,7 @@ func Test_Projects(t *testing.T) {
 	}
 
 	// Make project 3 a child of project 1
-	_, _, err = client.Projects.Move(context.Background(), "", &MoveProject{
+	_, _, err = client.Projects.Move(context.Background(), "", MoveProject{
 		ID:       childProject2ID,
 		ParentID: parentProjectID,
 	})
@@ -96,7 +100,7 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = client.Projects.Reorder(context.Background(), "", &ReorderProjects{
+	_, _, err = client.Projects.Reorder(context.Background(), "", ReorderProjects{
 		Projects: []ReorderedProject{
 			{
 				ID:         childProject2ID,
@@ -108,28 +112,28 @@ func Test_Projects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = client.Projects.Archive(context.Background(), "", &ArchiveProject{
+	_, _, err = client.Projects.Archive(context.Background(), "", ArchiveProject{
 		ID: parentProjectID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
+	_, _, err = client.Projects.Unarchive(context.Background(), "", UnarchiveProject{
 		ID: parentProjectID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
+	_, _, err = client.Projects.Unarchive(context.Background(), "", UnarchiveProject{
 		ID: childProject1ID,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	projects, _, err = client.Projects.Unarchive(context.Background(), "", &UnarchiveProject{
+	projects, _, err = client.Projects.Unarchive(context.Background(), "", UnarchiveProject{
 		ID: childProject2ID,
 	})
 	if err != nil {
@@ -147,8 +151,8 @@ func Test_Projects(t *testing.T) {
 	}
 
 	for _, project := range projects {
-		if _, _, err = client.Projects.Delete(context.Background(), "", &DeleteProject{
-			ID: strconv.Itoa(int(*project.ID)),
+		if _, _, err = client.Projects.Delete(context.Background(), "", DeleteProject{
+			ID: strconv.Itoa(project.ID),
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -284,7 +288,7 @@ func Test_NewRequest(t *testing.T) {
 	}
 
 	c.userAgent = ""
-	req, _ = c.NewRequest("", []string{"projects"}, []*Command{
+	req, _ = c.NewRequest("", []string{"projects"}, []Command{
 		{
 			Type:   "command_type",
 			Args:   "args",
@@ -312,7 +316,7 @@ func Test_NewRequest(t *testing.T) {
 		t.Errorf("User-Agent should not be set in request, received %s", userAgent)
 	}
 
-	_, err = c.NewRequest("", []string{"all"}, []*Command{
+	_, err = c.NewRequest("", []string{"all"}, []Command{
 		{
 			Type:   "type",
 			Args:   c.client, // Just need something that is unserializable
