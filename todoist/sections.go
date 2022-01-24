@@ -288,3 +288,43 @@ func (s *SectionsService) Delete(ctx context.Context, syncToken string, deleteSe
 
 	return commandResponse.Sections, commandResponse, nil
 }
+
+type ArchiveSection struct {
+	// Section ID to archive.
+	ID string `json:"id"`
+
+	TempID string `json:"-"`
+}
+
+// Archive a section and all its child tasks.
+func (s *SectionsService) Archive(ctx context.Context, syncToken string, archiveSection ArchiveSection) ([]Section, CommandResponse, error) {
+	s.client.Logln("---------- Sections.Archive")
+
+	id := uuid.New().String()
+	tempID := archiveSection.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	archiveCommand := Command{
+		Type:   "section_archive",
+		Args:   archiveSection,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []Command{archiveCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"sections"}, commands)
+	if err != nil {
+		return nil, CommandResponse{}, err
+	}
+
+	var commandResponse CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Sections, commandResponse, nil
+}

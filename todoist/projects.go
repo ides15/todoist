@@ -383,14 +383,14 @@ func (s *ProjectsService) Reorder(ctx context.Context, syncToken string, reorder
 		tempID = uuid.New().String()
 	}
 
-	reorderProjectsCommand := Command{
+	reorderCommand := Command{
 		Type:   "project_reorder",
 		Args:   reorderProjects,
 		UUID:   id,
 		TempID: tempID,
 	}
 
-	commands := []Command{reorderProjectsCommand}
+	commands := []Command{reorderCommand}
 
 	req, err := s.client.NewRequest(syncToken, []string{"projects"}, commands)
 	if err != nil {
