@@ -200,3 +200,51 @@ func (s *SectionsService) Move(ctx context.Context, syncToken string, moveSectio
 
 	return commandResponse.Sections, commandResponse, nil
 }
+
+type ReorderedSection struct {
+	// ID of the section to update.
+	ID string `json:"id"`
+
+	// The new order.
+	SectionOrder int `json:"section_order"`
+}
+
+type ReorderSections struct {
+	// An array of objects to update. Each object contains two attributes: id of the section to update and section_order, the new order.
+	Sections []ReorderedSection `json:"sections"`
+
+	TempID string `json:"-"`
+}
+
+// The command updates section_order properties of sections in bulk.
+func (s *SectionsService) Reorder(ctx context.Context, syncToken string, reorderSections ReorderSections) ([]Section, CommandResponse, error) {
+	s.client.Logln("---------- Sections.Reorder")
+
+	id := uuid.New().String()
+	tempID := reorderSections.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	reorderCommand := Command{
+		Type:   "section_reorder",
+		Args:   reorderSections,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []Command{reorderCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"sections"}, commands)
+	if err != nil {
+		return nil, CommandResponse{}, err
+	}
+
+	var commandResponse CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Sections, commandResponse, nil
+}

@@ -363,7 +363,7 @@ type ReorderedProject struct {
 	ID string `json:"id"`
 
 	// The new order.
-	ChildOrder int32 `json:"child_order"`
+	ChildOrder int `json:"child_order"`
 }
 
 type ReorderProjects struct {
