@@ -88,11 +88,20 @@ func (s *ProjectsService) List(ctx context.Context, syncToken string) ([]Project
 
 // AddProject defines the options for creating a new project.
 type AddProject struct {
-	Name       string `json:"name"`
-	Color      int    `json:"color,omitempty"`
-	ParentID   int    `json:"parent_id,omitempty"`
-	ChildOrder int    `json:"child_order,omitempty"`
-	IsFavorite int    `json:"is_favorite,omitempty"`
+	// The name of the project (a string value).
+	Name string `json:"name"`
+
+	// A numeric ID representing the color of the project icon. Refer to the id column in the Colors guide for more info.
+	Color int `json:"color,omitempty"`
+
+	// The ID of the parent project. Set to null for root projects
+	ParentID int `json:"parent_id,omitempty"`
+
+	// The order of the project. Defines the position of the project among all the projects with the same parent_id
+	ChildOrder int `json:"child_order,omitempty"`
+
+	// Whether the project is a favorite (where 1 is true and 0 is false).
+	IsFavorite int `json:"is_favorite,omitempty"`
 
 	TempID string `json:"-"`
 }
@@ -132,11 +141,20 @@ func (s *ProjectsService) Add(ctx context.Context, syncToken string, addProject 
 
 // UpdateProject defines the options for updating an existing project.
 type UpdateProject struct {
-	ID         string `json:"id"`
-	Name       string `json:"name,omitempty"`
-	Color      int    `json:"color,omitempty"`
-	Collapsed  int    `json:"collapsed,omitempty"`
-	IsFavorite int    `json:"is_favorite,omitempty"`
+	// The ID of the project (could be temp id).
+	ID string `json:"id"`
+
+	// The name of the project (a string value).
+	Name string `json:"name,omitempty"`
+
+	// A numeric ID representing the color of the project icon. Refer to the id column in the Colors guide for more info.
+	Color int `json:"color,omitempty"`
+
+	// Whether the project's sub-projects are collapsed (where 1 is true and 0 is false).
+	Collapsed int `json:"collapsed,omitempty"`
+
+	// Whether the project is a favorite (where 1 is true and 0 is false).
+	IsFavorite int `json:"is_favorite,omitempty"`
 
 	TempID string `json:"-"`
 }
@@ -175,7 +193,10 @@ func (s *ProjectsService) Update(ctx context.Context, syncToken string, updatePr
 }
 
 type MoveProject struct {
-	ID       string `json:"id"`
+	// The ID of the project (could be temp id).
+	ID string `json:"id"`
+
+	// The ID of the parent project (could be temp id). If set to null, the project will be moved to the root
 	ParentID string `json:"parent_id"`
 
 	TempID string `json:"-"`
@@ -215,6 +236,7 @@ func (s *ProjectsService) Move(ctx context.Context, syncToken string, moveProjec
 }
 
 type DeleteProject struct {
+	// ID of the project to delete (could be a temp id).
 	ID string `json:"id"`
 
 	TempID string `json:"-"`
@@ -254,6 +276,7 @@ func (s *ProjectsService) Delete(ctx context.Context, syncToken string, deletePr
 }
 
 type ArchiveProject struct {
+	// ID of the project to archive (could be a temp id).
 	ID string `json:"id"`
 
 	TempID string `json:"-"`
@@ -293,6 +316,7 @@ func (s *ProjectsService) Archive(ctx context.Context, syncToken string, archive
 }
 
 type UnarchiveProject struct {
+	// ID of the project to unarchive (could be a temp id).
 	ID string `json:"id"`
 
 	TempID string `json:"-"`
@@ -335,11 +359,15 @@ func (s *ProjectsService) Unarchive(ctx context.Context, syncToken string, unarc
 }
 
 type ReorderedProject struct {
-	ID         string `json:"id"`
-	ChildOrder int32  `json:"child_order"`
+	// ID of the project to order.
+	ID string `json:"id"`
+
+	// The new order.
+	ChildOrder int32 `json:"child_order"`
 }
 
 type ReorderProjects struct {
+	// An array of objects to update. Each object contains two attributes: id of the project to update and child_order, the new order.
 	Projects []ReorderedProject `json:"projects"`
 
 	TempID string `json:"-"`
@@ -506,6 +534,7 @@ func (s *ProjectsService) GetProjectData(ctx context.Context, syncToken string, 
 type Pagination struct {
 	// The maximum number of archived projects to return (between 1 and 500, default is 500).
 	Limit int
+
 	// The offset of the first archived project to return, for pagination purposes (first page is 0).
 	Offset int
 }
