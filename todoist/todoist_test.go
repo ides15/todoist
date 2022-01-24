@@ -192,6 +192,25 @@ func Test_Sections(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	tempSectionMoveProjectID := "sectionMoveProjectID"
+	_, resp, err = client.Projects.Add(context.Background(), "", AddProject{
+		Name:   "Section Move test",
+		TempID: tempSectionMoveProjectID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sectionMoveProjectID := strconv.Itoa(int(resp.TempIDMapping[tempSectionMoveProjectID]))
+
+	_, _, err = client.Sections.Move(context.Background(), "", MoveSection{
+		ID:        inboxSectionID,
+		ProjectID: sectionMoveProjectID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	sections, _, err := client.Sections.List(context.Background(), "")
 	if err != nil {
 		t.Fatal(err)
