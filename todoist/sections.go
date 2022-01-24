@@ -1,6 +1,10 @@
 package todoist
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 // SectionsService handles communication with the sections related
 // methods of the Todoist API.
@@ -62,4 +66,48 @@ func (s *SectionsService) List(ctx context.Context, syncToken string) ([]Section
 	return readResponse.Sections, readResponse, nil
 }
 
-// func (s *SectionsService) Add(ctx context.Context, syncToken string) ([])
+type AddSection struct {
+	// The name of the section.
+	Name string `json:"name"`
+
+	// The ID of the parent project.
+	ProjectID int `json:"project_id"`
+
+	// The order of the section. Defines the position of the section among all the sections in the project.
+	SectionOrder int `json:"section_order,omitempty"`
+
+	TempID string `json:"-"`
+}
+
+// Add a new section to a project.
+func (s *SectionsService) Add(ctx context.Context, syncToken string, addSection AddSection) ([]Section, CommandResponse, error) {
+	s.client.Logln("---------- Sections.Add")
+
+	id := uuid.New().String()
+	tempID := addSection.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	addCommand := Command{
+		Type:   "section_add",
+		Args:   addSection,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []Command{addCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"sections"}, commands)
+	if err != nil {
+		return nil, CommandResponse{}, err
+	}
+
+	var commandResponse CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Sections, commandResponse, nil
+}

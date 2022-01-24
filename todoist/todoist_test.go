@@ -170,6 +170,17 @@ func Test_Sections(t *testing.T) {
 	}
 	client.SetDebug(true)
 
+	tempSectionID := "inboxSectionID"
+	client.Sections.Add(context.Background(), "", AddSection{
+		Name:         "New Section",
+		ProjectID:    2252888543, // Inbox project
+		SectionOrder: 0,
+		TempID:       tempSectionID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	sections, _, err := client.Sections.List(context.Background(), "")
 	if err != nil {
 		t.Fatal(err)
