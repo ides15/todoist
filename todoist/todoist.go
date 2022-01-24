@@ -16,6 +16,8 @@ import (
 const (
 	defaultBaseURL = "https://api.todoist.com/sync/v8"
 	userAgent      = "todoist-go/1.0.0"
+
+	TEST_STR = ""
 )
 
 // A Client manages communication with the Todoist API.
