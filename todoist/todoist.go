@@ -34,6 +34,7 @@ type Client struct {
 
 	// Services used for talking to different parts of the Todoist API.
 	Projects *ProjectsService
+	Sections *SectionsService
 }
 
 // Logf logs a format string and values to output if the client's debug mode is set to true.
@@ -80,7 +81,9 @@ func NewClient(apiToken string) (*Client, error) {
 
 	c.common.client = c
 
-	c.Projects = (*ProjectsService)(&c.common)
+	// c.Projects = (*ProjectsService)(&c.common)
+	c.Projects = &ProjectsService{client: c}
+	c.Sections = &SectionsService{client: c}
 
 	return c, nil
 }

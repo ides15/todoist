@@ -20,21 +20,52 @@ type ProjectsService service
 
 // Project represents a Todoist project.
 type Project struct {
-	ID             int    `json:"id"`
-	LegacyID       *int   `json:"legacy_id"`
-	Name           string `json:"name"`
-	Color          int    `json:"color"`
-	ParentID       *int   `json:"parent_id"`
-	LegacyParentID *int   `json:"legacy_parent_id"`
-	ChildOrder     int    `json:"child_order"`
-	Collapsed      int    `json:"collapsed"`
-	Shared         bool   `json:"shared"`
-	IsDeleted      int    `json:"is_deleted"`
-	IsArchived     int    `json:"is_archived"`
-	IsFavorite     int    `json:"is_favorite"`
-	SyncID         *int   `json:"sync_id"`
-	InboxProject   *bool  `json:"inbox_project"`
-	TeamInbox      *bool  `json:"team_inbox"`
+	// The ID of the project.
+	ID int `json:"id"`
+
+	// The legacy ID of the project.
+	// (only shown for objects created before 1 April 2017)
+	LegacyID *int `json:"legacy_id"`
+
+	// The name of the project.
+	Name string `json:"name"`
+
+	// A numeric ID representing the color of the project icon. Refer to the id column in the Colors guide for more info.
+	Color int `json:"color"`
+
+	// The ID of the parent project. Set to null for root projects.
+	ParentID *int `json:"parent_id"`
+
+	// The legacy ID of the parent project. Set to null for root projects.
+	// (only shown for objects created before 1 April 2017)
+	LegacyParentID *int `json:"legacy_parent_id"`
+
+	// The order of the project. Defines the position of the project among all the projects with the same parent_id
+	ChildOrder int `json:"child_order"`
+
+	// Whether the project's sub-projects are collapsed (where 1 is true and 0 is false).
+	Collapsed int `json:"collapsed"`
+
+	// Whether the project is shared (a true or false value).
+	Shared bool `json:"shared"`
+
+	// Whether the project is marked as deleted (where 1 is true and 0 is false).
+	IsDeleted int `json:"is_deleted"`
+
+	// Whether the project is marked as archived (where 1 is true and 0 is false).
+	IsArchived int `json:"is_archived"`
+
+	// Whether the project is a favorite (where 1 is true and 0 is false).
+	IsFavorite int `json:"is_favorite"`
+
+	// Identifier to find the match between different copies of shared projects. When you share a project, its copy has a different ID for your collaborators. To find a project in a different account that matches yours, you can use the "sync_id" attribute. For non-shared projects the attribute is set to null.
+	SyncID *int `json:"sync_id"`
+
+	// Whether the project is Inbox (true or otherwise this property is not sent).
+	InboxProject *bool `json:"inbox_project"`
+
+	// Whether the project is TeamInbox (true or otherwise this property is not sent).
+	TeamInbox *bool `json:"team_inbox"`
 }
 
 // List the projects for a user.
