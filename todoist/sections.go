@@ -157,3 +157,46 @@ func (s *SectionsService) Update(ctx context.Context, syncToken string, updateSe
 
 	return commandResponse.Sections, commandResponse, nil
 }
+
+type MoveSection struct {
+	// The ID of the section.
+	ID string `json:"id"`
+
+	// ID of the destination project.
+	ProjectID string `json:"project_id,omitempty"`
+
+	TempID string `json:"-"`
+}
+
+// Move section to a different location.
+func (s *SectionsService) Move(ctx context.Context, syncToken string, moveSection MoveSection) ([]Section, CommandResponse, error) {
+	s.client.Logln("---------- Sections.Move")
+
+	id := uuid.New().String()
+	tempID := moveSection.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	moveCommand := Command{
+		Type:   "section_move",
+		Args:   moveSection,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []Command{moveCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"sections"}, commands)
+	if err != nil {
+		return nil, CommandResponse{}, err
+	}
+
+	var commandResponse CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Sections, commandResponse, nil
+}
