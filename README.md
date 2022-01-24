@@ -25,10 +25,35 @@ if err != nil {
 
 ---
 
-<br/>
-
 ## Working with Resources
 
 Through `todoist.Client`, you can work with any Todoist resource (projects, notes, items, etc).
 
-See the tests for the most up-to-date examples.
+(See the tests for the most up-to-date examples)
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/ides15/todoist"
+)
+
+func main() {
+	client, err := todoist.NewClient("<YOUR_TODOIST_API_TOKEN>")
+	if err != nil {
+		panic(err)
+	}
+
+	projects, _, err := client.Projects.List(context.Background(), "")
+	if err != nil {
+		panic(err)
+	}
+
+	for _, p := range projects {
+		fmt.Println(p.ID, p.Name)
+	}
+}
+```
