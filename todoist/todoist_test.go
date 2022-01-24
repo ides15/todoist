@@ -170,12 +170,23 @@ func Test_Sections(t *testing.T) {
 	}
 	client.SetDebug(true)
 
-	tempSectionID := "inboxSectionID"
-	client.Sections.Add(context.Background(), "", AddSection{
-		Name:         "New Section",
+	tempInboxSectionID := "inboxSectionID"
+	_, resp, err := client.Sections.Add(context.Background(), "", AddSection{
+		Name:         "New Inbox section",
 		ProjectID:    2252888543, // Inbox project
 		SectionOrder: 0,
-		TempID:       tempSectionID,
+		TempID:       tempInboxSectionID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	inboxSectionID := strconv.Itoa(int(resp.TempIDMapping[tempInboxSectionID]))
+
+	_, _, err = client.Sections.Update(context.Background(), "", UpdateSection{
+		ID:        inboxSectionID,
+		Name:      "Updated Inbox section",
+		Collapsed: true,
 	})
 	if err != nil {
 		t.Fatal(err)

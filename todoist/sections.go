@@ -111,3 +111,49 @@ func (s *SectionsService) Add(ctx context.Context, syncToken string, addSection 
 
 	return commandResponse.Sections, commandResponse, nil
 }
+
+type UpdateSection struct {
+	// The ID of the section.
+	ID string `json:"id"`
+
+	// The name of the section.
+	Name string `json:"name,omitempty"`
+
+	// Whether the section's tasks are collapsed (a true or false value).
+	Collapsed bool `json:"collapsed"`
+
+	TempID string `json:"-"`
+}
+
+// Updates section attributes.
+func (s *SectionsService) Update(ctx context.Context, syncToken string, updateSection UpdateSection) ([]Section, CommandResponse, error) {
+	s.client.Logln("---------- Sections.Update")
+
+	id := uuid.New().String()
+	tempID := updateSection.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	updateCommand := Command{
+		Type:   "section_update",
+		Args:   updateSection,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []Command{updateCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"sections"}, commands)
+	if err != nil {
+		return nil, CommandResponse{}, err
+	}
+
+	var commandResponse CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Sections, commandResponse, nil
+}

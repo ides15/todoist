@@ -146,9 +146,9 @@ func (c *Client) NewRequest(syncToken string, resourceTypes []string, commands [
 
 // ReadResponse is a Todoist API response for a read request.
 type ReadResponse struct {
-	FullSync      bool             `json:"full_sync"`
-	SyncToken     string           `json:"sync_token"`
-	TempIDMapping map[string]int64 `json:"temp_id_mapping"`
+	FullSync      bool           `json:"full_sync"`
+	SyncToken     string         `json:"sync_token"`
+	TempIDMapping map[string]int `json:"temp_id_mapping"`
 
 	Projects []Project `json:"projects"`
 	Sections []Section `json:"sections"`
@@ -173,7 +173,7 @@ type CommandResponse struct {
 	FullSync      bool                   `json:"full_sync"`
 	SyncToken     string                 `json:"sync_token"`
 	SyncStatus    map[string]interface{} `json:"sync_status"`
-	TempIDMapping map[string]int64       `json:"temp_id_mapping"`
+	TempIDMapping map[string]int         `json:"temp_id_mapping"`
 
 	Projects []Project `json:"projects"`
 	Sections []Section `json:"sections"`
