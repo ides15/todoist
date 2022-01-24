@@ -25,7 +25,7 @@ func Test_Projects(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client.SetDebug(true)
+	client.SetDebug(false)
 
 	// List all projects
 	projects, _, err := client.Projects.List(context.Background(), "")
@@ -160,6 +160,23 @@ func Test_Projects(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func Test_Sections(t *testing.T) {
+	client, err := NewClient(apiToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.SetDebug(true)
+
+	sections, _, err := client.Sections.List(context.Background(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, section := range sections {
+		t.Logf("%+v\n", section)
 	}
 }
 

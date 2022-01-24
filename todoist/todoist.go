@@ -150,8 +150,8 @@ type ReadResponse struct {
 	SyncToken     string           `json:"sync_token"`
 	TempIDMapping map[string]int64 `json:"temp_id_mapping"`
 
-	// user	A user object.
 	Projects []Project `json:"projects"`
+	Sections []Section `json:"sections"`
 	// items	An array of item objects.
 	// notes	An array of item note objects.
 	// project_notes	An array of project note objects.
@@ -176,6 +176,7 @@ type CommandResponse struct {
 	TempIDMapping map[string]int64       `json:"temp_id_mapping"`
 
 	Projects []Project `json:"projects"`
+	Sections []Section `json:"sections"`
 }
 
 // Do sends an API request and returns the API response. The API response is
