@@ -248,3 +248,43 @@ func (s *SectionsService) Reorder(ctx context.Context, syncToken string, reorder
 
 	return commandResponse.Sections, commandResponse, nil
 }
+
+type DeleteSection struct {
+	// ID of the section to delete.
+	ID string `json:"id"`
+
+	TempID string `json:"-"`
+}
+
+// Delete a section and all its child tasks.
+func (s *SectionsService) Delete(ctx context.Context, syncToken string, deleteSection DeleteSection) ([]Section, CommandResponse, error) {
+	s.client.Logln("---------- Sections.Delete")
+
+	id := uuid.New().String()
+	tempID := deleteSection.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	deleteCommand := Command{
+		Type:   "section_delete",
+		Args:   deleteSection,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []Command{deleteCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"sections"}, commands)
+	if err != nil {
+		return nil, CommandResponse{}, err
+	}
+
+	var commandResponse CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Sections, commandResponse, nil
+}
