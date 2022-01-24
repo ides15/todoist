@@ -146,6 +146,7 @@ func Test_Projects(t *testing.T) {
 		t.Fatalf("expected the number of archived projects returned to be 1, received %d", len(archivedProjectsP))
 	}
 
+	// Cleanup
 	for _, project := range projects {
 		if _, _, err = client.Projects.Delete(context.Background(), "", DeleteProject{
 			ID: strconv.Itoa(project.ID),
@@ -201,11 +202,62 @@ func Test_Sections(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sectionMoveProjectID := strconv.Itoa(int(resp.TempIDMapping[tempSectionMoveProjectID]))
+	sectionMoveProjectID := resp.TempIDMapping[tempSectionMoveProjectID]
+	strSectionMoveProjectID := strconv.Itoa(int(resp.TempIDMapping[tempSectionMoveProjectID]))
 
 	_, _, err = client.Sections.Move(context.Background(), "", MoveSection{
 		ID:        inboxSectionID,
+		ProjectID: strSectionMoveProjectID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tempSectionReorderSectionID := "sectionReorderSectionID"
+	_, resp, err = client.Sections.Add(context.Background(), "", AddSection{
+		Name:      "Reorder section test",
 		ProjectID: sectionMoveProjectID,
+		TempID:    tempSectionReorderSectionID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sectionReorderSectionID := strconv.Itoa(int(resp.TempIDMapping[tempSectionReorderSectionID]))
+
+	_, _, err = client.Sections.Reorder(context.Background(), "", ReorderSections{
+		Sections: []ReorderedSection{
+			{
+				ID:           inboxSectionID,
+				SectionOrder: 2,
+			},
+			{
+				ID:           sectionReorderSectionID,
+				SectionOrder: 1,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = client.Sections.Archive(context.Background(), "", ArchiveSection{
+		ID: sectionReorderSectionID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = client.Sections.Unarchive(context.Background(), "", UnarchiveSection{
+		ID: sectionReorderSectionID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Cleanup
+	_, _, err = client.Projects.Delete(context.Background(), "", DeleteProject{
+		ID: strSectionMoveProjectID,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -217,7 +269,12 @@ func Test_Sections(t *testing.T) {
 	}
 
 	for _, section := range sections {
-		t.Logf("%+v\n", section)
+		_, _, err = client.Sections.Delete(context.Background(), "", DeleteSection{
+			ID: strconv.Itoa(section.ID),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
