@@ -328,3 +328,43 @@ func (s *SectionsService) Archive(ctx context.Context, syncToken string, archive
 
 	return commandResponse.Sections, commandResponse, nil
 }
+
+type UnarchiveSection struct {
+	// Section ID to unarchive
+	ID string `json:"id"`
+
+	TempID string `json:"-"`
+}
+
+// This command is used to unarchive a section.
+func (s *SectionsService) Unarchive(ctx context.Context, syncToken string, unarchiveSection UnarchiveSection) ([]Section, CommandResponse, error) {
+	s.client.Logln("---------- Sections.Unarchive")
+
+	id := uuid.New().String()
+	tempID := unarchiveSection.TempID
+	if tempID == "" {
+		tempID = uuid.New().String()
+	}
+
+	unarchiveCommand := Command{
+		Type:   "section_unarchive",
+		Args:   unarchiveSection,
+		UUID:   id,
+		TempID: tempID,
+	}
+
+	commands := []Command{unarchiveCommand}
+
+	req, err := s.client.NewRequest(syncToken, []string{"sections"}, commands)
+	if err != nil {
+		return nil, CommandResponse{}, err
+	}
+
+	var commandResponse CommandResponse
+	_, err = s.client.Do(ctx, req, &commandResponse)
+	if err != nil {
+		return nil, commandResponse, err
+	}
+
+	return commandResponse.Sections, commandResponse, nil
+}
