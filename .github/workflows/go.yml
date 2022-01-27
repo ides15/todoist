@@ -30,7 +30,7 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Test
-        run: go test ./... -cover -failfast -race
-        env:
-          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+      # - name: Test
+      #   run: go test ./... -cover -failfast -race
+      #   env:
+      #     TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
