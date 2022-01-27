@@ -1,5 +1,7 @@
 package todoist
 
+import "context"
+
 // TasksService handles communication with the tasks related
 // methods of the Todoist API.
 //
@@ -64,7 +66,7 @@ type Task struct {
 	AddedByUID *int `json:"added_by_uid"`
 
 	// The ID of the user who assigned the task. This makes sense for shared projects only. Accepts any user ID from the list of project collaborators. If this value is unset or invalid, it will automatically be set up to your uid.
-	AssignedByUID int `json:"assigned_by_uid"`
+	AssignedByUID *int `json:"assigned_by_uid"`
 
 	// The ID of user who is responsible for accomplishing the current task. This makes sense for shared projects only. Accepts any user ID from the list of project collaborators or null or an empty string to unset.
 	ResponsibleUID *int `json:"responsible_uid"`
@@ -86,4 +88,22 @@ type Task struct {
 
 	// The date when the task was created.
 	DateAdded string `json:"date_added"`
+}
+
+// List the tasks for a user.
+func (s *TasksService) List(ctx context.Context, syncToken string) ([]Task, ReadResponse, error) {
+	s.client.Logln("---------- Tasks.List")
+
+	req, err := s.client.NewRequest(syncToken, []string{"items"}, nil)
+	if err != nil {
+		return nil, ReadResponse{}, err
+	}
+
+	var readResponse ReadResponse
+	_, err = s.client.Do(ctx, req, &readResponse)
+	if err != nil {
+		return nil, readResponse, err
+	}
+
+	return readResponse.Tasks, readResponse, nil
 }

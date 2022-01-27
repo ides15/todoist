@@ -169,7 +169,7 @@ func Test_Sections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client.SetDebug(true)
+	client.SetDebug(false)
 
 	tempInboxSectionID := "inboxSectionID"
 	_, resp, err := client.Sections.Add(context.Background(), "", AddSection{
@@ -275,6 +275,23 @@ func Test_Sections(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func Test_Tasks(t *testing.T) {
+	client, err := NewClient(apiToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.SetDebug(true)
+
+	tasks, _, err := client.Tasks.List(context.Background(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, task := range tasks {
+		t.Logf("%+v\n", task)
 	}
 }
 
