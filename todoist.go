@@ -35,6 +35,7 @@ type Client struct {
 	// Services used for talking to different parts of the Todoist API.
 	Projects *ProjectsService
 	Sections *SectionsService
+	Tasks    *TasksService
 }
 
 // Logf logs a format string and values to output if the client's debug mode is set to true.
@@ -84,6 +85,7 @@ func NewClient(apiToken string) (*Client, error) {
 	// c.Projects = (*ProjectsService)(&c.common)
 	c.Projects = &ProjectsService{client: c}
 	c.Sections = &SectionsService{client: c}
+	c.Tasks = &TasksService{client: c}
 
 	return c, nil
 }
@@ -152,10 +154,9 @@ type ReadResponse struct {
 
 	Projects []Project `json:"projects"`
 	Sections []Section `json:"sections"`
-	// items	An array of item objects.
+	Tasks    []Task    `json:"items"`
 	// notes	An array of item note objects.
 	// project_notes	An array of project note objects.
-	// sections	An array of section objects.
 	// labels	An array of label objects.
 	// filters	A array of filter objects.
 	// day_orders	A JSON object specifying the order of items in daily agenda.
@@ -177,6 +178,7 @@ type CommandResponse struct {
 
 	Projects []Project `json:"projects"`
 	Sections []Section `json:"sections"`
+	Tasks    []Task    `json:"items"`
 }
 
 // Do sends an API request and returns the API response. The API response is
