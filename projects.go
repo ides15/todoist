@@ -86,7 +86,6 @@ func (s *ProjectsService) List(ctx context.Context, syncToken string) ([]Project
 	return readResponse.Projects, readResponse, nil
 }
 
-// AddProject defines the options for creating a new project.
 type AddProject struct {
 	// The name of the project (a string value).
 	Name string `json:"name"`
@@ -139,7 +138,6 @@ func (s *ProjectsService) Add(ctx context.Context, syncToken string, addProject 
 	return commandResponse.Projects, commandResponse, nil
 }
 
-// UpdateProject defines the options for updating an existing project.
 type UpdateProject struct {
 	// The ID of the project (could be temp id).
 	ID string `json:"id"`

@@ -285,6 +285,16 @@ func Test_Tasks(t *testing.T) {
 	}
 	client.SetDebug(true)
 
+	// TODO - add more testing for Add
+	_, _, err = client.Tasks.Add(context.Background(), "", AddTask{
+		Content:     "New task content",
+		Description: "New task description",
+		Priority:    4,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tasks, _, err := client.Tasks.List(context.Background(), "")
 	if err != nil {
 		t.Fatal(err)
