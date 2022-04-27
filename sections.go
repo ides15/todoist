@@ -12,7 +12,7 @@ import (
 // Todoist API docs: https://developer.todoist.com/sync/v8/?shell#sections
 type SectionsService service
 
-// Section represnts a Todoist section.
+// Section represents a Todoist section.
 type Section struct {
 	// The ID of the section.
 	ID int `json:"id"`
