@@ -12,7 +12,19 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	_ "github.com/joho/godotenv/autoload"
 )
+
+// Added godotenv autoload to automatically load environment variables from a .env file in the root folder of the repository.
+// This makes the testing more portable and easily adaptable for different development environments.
+// Add a file called .env to the root folder of the repository on your local machine.
+// Add the line TODOIST_API_TOKEN=YOUR_TODOIST_API_KEY_WITHOUT_QUOTES_GOES_HERE to the .env file
+// Add the line .env to your .git/info/exclude file
+
+// WARNING! Running these tests on your main todoist account will delete all of your todoist projects.
+// Use a test account or.....
+// make sure you understand the tests first and comment out any you don't want to run on your account!
 
 var (
 	// Get the Todoist API token from an environment variable
