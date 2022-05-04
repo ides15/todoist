@@ -18,6 +18,8 @@ import (
 
 // Added godotenv autoload to automatically load environment variables from a .env file in the root folder of the repository.
 // This makes the testing more portable and easily adaptable for different development environments.
+
+// -----INSTRUCTIONS-----
 // Add a file called .env to the root folder of the repository on your local machine.
 // Add the line TODOIST_API_TOKEN=YOUR_TODOIST_API_KEY_WITHOUT_QUOTES_GOES_HERE to the .env file
 // Add the line .env to your .git/info/exclude file
@@ -31,6 +33,26 @@ var (
 	apiToken = os.Getenv("TODOIST_API_TOKEN")
 )
 
+// Test to list all projects
+func Test_List_Projects(t *testing.T) {
+	// Create the client to interact with Todoist
+	client, err := NewClient(apiToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.SetDebug(false)
+
+	// List all projects
+	projects, _, err := client.Projects.List(context.Background(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Print all projects set test to verbose (-v) to see the log.
+	for _, p := range projects {
+		t.Logf("%v : %s", p.ID, p.Name)
+	}
+}
+
 func Test_Projects(t *testing.T) {
 	// Create the client to interact with Todoist
 	client, err := NewClient(apiToken)
@@ -43,6 +65,11 @@ func Test_Projects(t *testing.T) {
 	projects, _, err := client.Projects.List(context.Background(), "")
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Print all projects set test to verbose (-v) to see the log.
+	for _, p := range projects {
+		t.Logf("%v : %s", p.ID, p.Name)
 	}
 
 	// Add a new project
